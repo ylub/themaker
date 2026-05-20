@@ -8,6 +8,7 @@ from pathlib import Path
 DEFAULT_FG = "F8F8F2"
 APP_DIR = Path(__file__).resolve().parent
 URL_LOG_FILE = APP_DIR / "used_urls.log"
+OUTPUT_DIR = APP_DIR / "colors"
 DEFAULT_PREVIEW_LABELS = {
     "normal": "normal text",
     "accent": "accent",
@@ -609,7 +610,8 @@ def run_wizard():
                 state["name"] = ask("Theme name", default_name)
                 stage += 1
             elif stage == 9:
-                out_path = Path.home() / "Desktop" / f"{safe_filename(state['name'])}.itermcolors"
+                OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+                out_path = OUTPUT_DIR / f"{safe_filename(state['name'])}.itermcolors"
                 if not confirm_yes("Create this iTerm theme? y/n", default=True):
                     print("Cancelled.")
                     return
