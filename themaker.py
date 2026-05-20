@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import plistlib
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 from pathlib import Path
 
 DEFAULT_FG = "F8F8F2"
+APP_DIR = Path(__file__).resolve().parent
+URL_LOG_FILE = APP_DIR / "used_urls.log"
 DEFAULT_PREVIEW_LABELS = {
     "normal": "normal text",
     "accent": "accent",
@@ -167,6 +170,23 @@ def parse_coolors_url(url):
     return colors[:5]
 
 
+def ansi_swatch(hex_color, text="  "):
+    r, g, b = hex_to_rgb(hex_color)
+    return f"\033[48;2;{r};{g};{b}m{text}\033[0m"
+
+
+def log_used_url(url, colors):
+    URL_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with URL_LOG_FILE.open("a", encoding="utf-8") as handle:
+        handle.write(f"{timestamp}\n")
+        handle.write(f"URL: {url.strip()}\n")
+        handle.write("Palette:\n")
+        for index, color in enumerate(colors, 1):
+            handle.write(f"  {index}. #{color} {ansi_swatch(color, '      ')}\n")
+        handle.write("\n")
+
+
 def brightness(hex_color):
     r, g, b = hex_to_rgb(hex_color)
     return r + g + b
@@ -179,8 +199,7 @@ def color_distance(first_hex, second_hex):
 
 
 def ansi_bg(hex_color, text="      "):
-    r, g, b = hex_to_rgb(hex_color)
-    return f"\033[48;2;{r};{g};{b}m{text}\033[0m"
+    return ansi_swatch(hex_color, text)
 
 
 def ansi_fg(hex_color, text):
@@ -538,6 +557,7 @@ def run_wizard():
                     allow_back=False,
                 )
                 state["colors"] = parse_coolors_url(url)
+                log_used_url(url, state["colors"])
                 preview_palette(state["colors"])
                 stage += 1
             elif stage == 1:
