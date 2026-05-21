@@ -168,7 +168,7 @@ def parse_coolors_url(url):
     if len(colors) < 5:
         raise ValueError("Coolors URL should contain at least 5 colors.")
 
-    return colors[:5]
+    return colors
 
 
 def ansi_swatch(hex_color, text="  "):
@@ -255,7 +255,7 @@ def unique_color_options(options):
 def foreground_options(colors, family, background):
     sorted_colors = sorted(colors, key=brightness)
     darkest, second_darkest = sorted_colors[0], sorted_colors[1]
-    second_brightest, brightest = sorted_colors[3], sorted_colors[4]
+    second_brightest, brightest = sorted_colors[-2], sorted_colors[-1]
     background_is_light = brightness(background) >= 390
 
     if background_is_light:
@@ -290,7 +290,8 @@ def preview_foregrounds(options, background, error_color, labels):
 def palette_roles(colors, family):
     sorted_colors = sorted(colors, key=brightness)
     darkest, second_darkest = sorted_colors[0], sorted_colors[1]
-    middle, second_brightest, brightest = sorted_colors[2], sorted_colors[3], sorted_colors[4]
+    middle = sorted_colors[len(sorted_colors) // 2]
+    second_brightest, brightest = sorted_colors[-2], sorted_colors[-1]
     c1, c2, c3, c4, c5 = colors[:5]
 
     if family["name"] == "light":
@@ -473,7 +474,7 @@ def print_role_mapping(colors, roles):
 
 
 def choose_role_color(colors, role, current_color):
-    prompt = f"ANSI {role} color: palette 1-5, custom hex, or Enter to keep"
+    prompt = f"ANSI {role} color: palette 1-{len(colors)}, custom hex, or Enter to keep"
     raw = ask(prompt, "").strip()
     if not raw:
         return current_color
