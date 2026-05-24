@@ -159,14 +159,15 @@ def rgb_plist(hex_color):
     }
 
 
-def parse_coolors_url(url):
-    parsed_url = urlparse(url.strip())
-    path = parsed_url.path if parsed_url.scheme or parsed_url.netloc else url.strip()
-    part = path.rstrip("/").split("/")[-1]
-    colors = [clean_hex(c) for c in part.split("-")]
+def parse_palette_input(value):
+    raw_value = value.strip()
+    parsed_url = urlparse(raw_value)
+    palette_text = parsed_url.path.rstrip("/").split("/")[-1] if parsed_url.scheme or parsed_url.netloc else raw_value
+    palette_text = palette_text.replace("-", " ").replace(",", " ")
+    colors = [clean_hex(part) for part in palette_text.split()]
 
     if len(colors) < 5:
-        raise ValueError("Coolors URL should contain at least 5 colors.")
+        raise ValueError("Palette should contain at least 5 hex colors.")
 
     return colors
 
@@ -553,13 +554,13 @@ def run_wizard():
     while stage <= 9:
         try:
             if stage == 0:
-                url = ask(
-                    "Paste Coolors URL",
-                    "https://coolors.co/25ced1-ffffff-fceade-ff8a5b-ea526f",
+                palette_value = ask(
+                    "Paste Coolors URL or hex colors separated by spaces",
+                    "25ced1 ffffff fceade ff8a5b ea526f",
                     allow_back=False,
                 )
-                state["colors"] = parse_coolors_url(url)
-                log_used_url(url, state["colors"])
+                state["colors"] = parse_palette_input(palette_value)
+                log_used_url(palette_value, state["colors"])
                 preview_palette(state["colors"])
                 stage += 1
             elif stage == 1:
