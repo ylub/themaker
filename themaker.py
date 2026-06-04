@@ -35,6 +35,14 @@ ANSI_ROLE_PREVIEW = {
     "magenta": "highlight",
     "cyan": "accent",
 }
+ANSI_ROLE_SAMPLE_WORDS = {
+    "red": "error",
+    "green": "success",
+    "yellow": "warning",
+    "blue": "command",
+    "magenta": "highlight",
+    "cyan": "accent",
+}
 COMMAND_WORDS = {"back", "quit", "exit", "q", "help", "restart"}
 
 THEME_FAMILIES = [
@@ -295,10 +303,19 @@ def ansi_fg(hex_color, text):
     return f"\033[38;2;{r};{g};{b}m{text}\033[0m"
 
 
+def ansi_text_on(background, foreground, text):
+    bg_r, bg_g, bg_b = hex_to_rgb(background)
+    fg_r, fg_g, fg_b = hex_to_rgb(foreground)
+    return (
+        f"\033[48;2;{bg_r};{bg_g};{bg_b}m"
+        f"\033[38;2;{fg_r};{fg_g};{fg_b}m{text}\033[0m"
+    )
+
+
 def preview_palette(colors):
     print("\nPalette:")
     for i, c in enumerate(colors, 1):
-        print(f"  {i}. #{c} {ansi_bg(c)}")
+        print(f"  {i}. #{c} {ansi_bg(c)} {ansi_fg(c, 'sample text')}")
 
 
 def palette_as_hex(colors):
@@ -308,13 +325,13 @@ def palette_as_hex(colors):
 def preview_palette_choices(colors):
     print("\nPalette choices:")
     for i, color in enumerate(colors, 1):
-        print(f"  {i}. #{color} {ansi_bg(color)}")
+        print(f"  {i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}")
 
 
 def preview_complementary_choices(options):
     print("\nComplementary choices:")
     for i, (name, color) in enumerate(options, 1):
-        print(f"  c{i}. #{color} {ansi_bg(color)}  {name}")
+        print(f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}  {name}")
 
 
 def color_choice_label(colors, color):
@@ -334,7 +351,7 @@ def preview_families():
 def preview_backgrounds(family):
     print(f"\nSuggested {family['label'].lower()} backgrounds:")
     for i, (name, color) in enumerate(family["backgrounds"], 1):
-        print(f"  {i}. #{color} {ansi_bg(color)}  {name}")
+        print(f"  {i}. #{color} {ansi_bg(color)} {ansi_bg(color, ' sample ')}  {name}")
 
 
 def unique_color_options(options):
@@ -381,7 +398,10 @@ def preview_foregrounds(options, background, error_color, labels):
     for index, (name, color) in enumerate(options, 1):
         error_note = " close to error" if color_distance(color, error_color) < 90 else ""
         bg_note = " low background contrast" if color_distance(color, background) < 90 else ""
-        print(f"  {index}. #{color} {ansi_fg(color, labels['normal'])}  {name}{error_note}{bg_note}")
+        print(
+            f"  {index}. #{color} {ansi_bg(color)} "
+            f"{ansi_text_on(background, color, labels['normal'])}  {name}{error_note}{bg_note}"
+        )
 
 
 def palette_roles(colors, family):
@@ -429,28 +449,27 @@ def palette_roles(colors, family):
 
 def preview_theme(colors, background, foreground, roles, labels):
     mapping = [
-        ("Background", background),
-        ("Foreground", foreground),
-        ("Black / ANSI 0 / base", roles["black"]),
-        ("Red / ANSI 1 / error", roles["red"]),
-        ("Green / ANSI 2 / success", roles["green"]),
-        ("Yellow / ANSI 3 / warning", roles["yellow"]),
-        ("Blue / ANSI 4 / link", roles["blue"]),
-        ("Magenta / ANSI 5 / highlight", roles["magenta"]),
-        ("Cyan / ANSI 6 / accent", roles["cyan"]),
-        ("White / ANSI 7", foreground),
+        ("Background", background, ansi_text_on(background, foreground, " sample ")),
+        ("Foreground", foreground, ansi_text_on(background, foreground, labels["normal"])),
+        ("Black / ANSI 0 / base", roles["black"], ansi_text_on(background, roles["black"], "base")),
+        ("Red / ANSI 1 / error", roles["red"], ansi_text_on(background, roles["red"], labels["error"])),
+        ("Green / ANSI 2 / success", roles["green"], ansi_text_on(background, roles["green"], "success")),
+        ("Yellow / ANSI 3 / warning", roles["yellow"], ansi_text_on(background, roles["yellow"], labels["warning"])),
+        ("Blue / ANSI 4 / link", roles["blue"], ansi_text_on(background, roles["blue"], "command")),
+        ("Magenta / ANSI 5 / highlight", roles["magenta"], ansi_text_on(background, roles["magenta"], "highlight")),
+        ("Cyan / ANSI 6 / accent", roles["cyan"], ansi_text_on(background, roles["cyan"], labels["accent"])),
+        ("White / ANSI 7", foreground, ansi_text_on(background, foreground, "normal")),
     ]
 
     print("\nTheme preview:")
-    for label, color in mapping:
-        print(f"  {label:<28} #{color} {ansi_bg(color)}")
+    for label, color, sample in mapping:
+        print(f"  {label:<28} #{color} {ansi_bg(color)} {sample}")
 
     print("\nText preview:")
-    print(f"  {ansi_bg(background, '  ')} "
-          f"{ansi_fg(foreground, labels['normal'])} (foreground) "
-          f"{ansi_fg(roles['cyan'], labels['accent'])} (ANSI 6/cyan/accent) "
-          f"{ansi_fg(roles['yellow'], labels['warning'])} (ANSI 3/yellow/warning) "
-          f"{ansi_fg(roles['red'], labels['error'])} (ANSI 1/red/error)")
+    print(f"  {ansi_text_on(background, foreground, labels['normal'])} (foreground) "
+          f"{ansi_text_on(background, roles['cyan'], labels['accent'])} (ANSI 6/cyan/accent) "
+          f"{ansi_text_on(background, roles['yellow'], labels['warning'])} (ANSI 3/yellow/warning) "
+          f"{ansi_text_on(background, roles['red'], labels['error'])} (ANSI 1/red/error)")
     if color_distance(foreground, roles["red"]) < 90:
         print("  Warning: normal text is close to the error color.")
     if color_distance(foreground, background) < 90:
@@ -759,9 +778,11 @@ def print_role_mapping(colors, roles):
     print("\nANSI role mapping:")
     for role in ("red", "green", "yellow", "blue", "magenta", "cyan"):
         preview_name = ANSI_ROLE_PREVIEW[role]
+        sample_word = ANSI_ROLE_SAMPLE_WORDS[role]
         print(
             f"  ANSI {role:<7} / {preview_name:<17} "
-            f"#{roles[role]} {ansi_bg(roles[role])} {color_choice_label(colors, roles[role])}"
+            f"#{roles[role]} {ansi_bg(roles[role])} "
+            f"{ansi_fg(roles[role], sample_word)} {color_choice_label(colors, roles[role])}"
         )
 
 
@@ -816,9 +837,10 @@ def offer_bright_ansi_suggestions(roles, family):
     for role in ("red", "green", "yellow", "blue", "magenta", "cyan"):
         current = roles[role]
         suggested = suggestions[role]
+        sample_word = ANSI_ROLE_SAMPLE_WORDS[role]
         print(
-            f"  {role:<7} #{current} {ansi_bg(current)}  ->  "
-            f"#{suggested} {ansi_bg(suggested)}"
+            f"  {role:<7} #{current} {ansi_bg(current)} {ansi_fg(current, sample_word)}  ->  "
+            f"#{suggested} {ansi_bg(suggested)} {ansi_fg(suggested, sample_word)}"
         )
 
     if not confirm_yes("Apply these bright ANSI suggestions? y/n", default=False):
