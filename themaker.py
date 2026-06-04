@@ -20,7 +20,16 @@ GENERATOR_KEY = "TheMaker Generator"
 FAMILY_KEY = "TheMaker Family"
 MODE_KEY = "TheMaker Mode"
 EXPORT_FORMATS = ("iterm", "kitty", "alacritty", "wezterm", "data")
-TERMINAL_ROLE_NAMES = ("black", "red", "green", "yellow", "blue", "magenta", "cyan", "white")
+TERMINAL_ROLE_NAMES = (
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "white",
+)
 DEFAULT_PREVIEW_LABELS = {
     "normal": "normal text",
     "accent": "accent",
@@ -165,7 +174,7 @@ def clean_hex(h):
 
 def hex_to_rgb(hex_color):
     h = clean_hex(hex_color)
-    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def rgb_to_hex(rgb):
@@ -185,18 +194,25 @@ def rgb_plist(hex_color):
 
 def plist_rgb_to_hex(value):
     return rgb_to_hex(
-        tuple(round(value.get(component, 0) * 255) for component in (
-            "Red Component",
-            "Green Component",
-            "Blue Component",
-        ))
+        tuple(
+            round(value.get(component, 0) * 255)
+            for component in (
+                "Red Component",
+                "Green Component",
+                "Blue Component",
+            )
+        )
     )
 
 
 def parse_palette_input(value):
     raw_value = value.strip()
     parsed_url = urlparse(raw_value)
-    palette_text = parsed_url.path.rstrip("/").split("/")[-1] if parsed_url.scheme or parsed_url.netloc else raw_value
+    palette_text = (
+        parsed_url.path.rstrip("/").split("/")[-1]
+        if parsed_url.scheme or parsed_url.netloc
+        else raw_value
+    )
     palette_text = palette_text.replace("-", " ").replace(",", " ")
     colors = [clean_hex(part) for part in palette_text.split()]
 
@@ -331,7 +347,9 @@ def preview_palette_choices(colors):
 def preview_complementary_choices(options):
     print("\nComplementary choices:")
     for i, (name, color) in enumerate(options, 1):
-        print(f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}  {name}")
+        print(
+            f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}  {name}"
+        )
 
 
 def color_choice_label(colors, color):
@@ -396,8 +414,12 @@ def foreground_options(colors, family, background):
 def preview_foregrounds(options, background, error_color, labels):
     print("\nSuggested normal text colors:")
     for index, (name, color) in enumerate(options, 1):
-        error_note = " close to error" if color_distance(color, error_color) < 90 else ""
-        bg_note = " low background contrast" if color_distance(color, background) < 90 else ""
+        error_note = (
+            " close to error" if color_distance(color, error_color) < 90 else ""
+        )
+        bg_note = (
+            " low background contrast" if color_distance(color, background) < 90 else ""
+        )
         print(
             f"  {index}. #{color} {ansi_bg(color)} "
             f"{ansi_text_on(background, color, labels['normal'])}  {name}{error_note}{bg_note}"
@@ -450,14 +472,46 @@ def palette_roles(colors, family):
 def preview_theme(colors, background, foreground, roles, labels):
     mapping = [
         ("Background", background, ansi_text_on(background, foreground, " sample ")),
-        ("Foreground", foreground, ansi_text_on(background, foreground, labels["normal"])),
-        ("Black / ANSI 0 / base", roles["black"], ansi_text_on(background, roles["black"], "base")),
-        ("Red / ANSI 1 / error", roles["red"], ansi_text_on(background, roles["red"], labels["error"])),
-        ("Green / ANSI 2 / success", roles["green"], ansi_text_on(background, roles["green"], "success")),
-        ("Yellow / ANSI 3 / warning", roles["yellow"], ansi_text_on(background, roles["yellow"], labels["warning"])),
-        ("Blue / ANSI 4 / link", roles["blue"], ansi_text_on(background, roles["blue"], "command")),
-        ("Magenta / ANSI 5 / highlight", roles["magenta"], ansi_text_on(background, roles["magenta"], "highlight")),
-        ("Cyan / ANSI 6 / accent", roles["cyan"], ansi_text_on(background, roles["cyan"], labels["accent"])),
+        (
+            "Foreground",
+            foreground,
+            ansi_text_on(background, foreground, labels["normal"]),
+        ),
+        (
+            "Black / ANSI 0 / base",
+            roles["black"],
+            ansi_text_on(background, roles["black"], "base"),
+        ),
+        (
+            "Red / ANSI 1 / error",
+            roles["red"],
+            ansi_text_on(background, roles["red"], labels["error"]),
+        ),
+        (
+            "Green / ANSI 2 / success",
+            roles["green"],
+            ansi_text_on(background, roles["green"], "success"),
+        ),
+        (
+            "Yellow / ANSI 3 / warning",
+            roles["yellow"],
+            ansi_text_on(background, roles["yellow"], labels["warning"]),
+        ),
+        (
+            "Blue / ANSI 4 / link",
+            roles["blue"],
+            ansi_text_on(background, roles["blue"], "command"),
+        ),
+        (
+            "Magenta / ANSI 5 / highlight",
+            roles["magenta"],
+            ansi_text_on(background, roles["magenta"], "highlight"),
+        ),
+        (
+            "Cyan / ANSI 6 / accent",
+            roles["cyan"],
+            ansi_text_on(background, roles["cyan"], labels["accent"]),
+        ),
         ("White / ANSI 7", foreground, ansi_text_on(background, foreground, "normal")),
     ]
 
@@ -466,10 +520,12 @@ def preview_theme(colors, background, foreground, roles, labels):
         print(f"  {label:<28} #{color} {ansi_bg(color)} {sample}")
 
     print("\nText preview:")
-    print(f"  {ansi_text_on(background, foreground, labels['normal'])} (foreground) "
-          f"{ansi_text_on(background, roles['cyan'], labels['accent'])} (ANSI 6/cyan/accent) "
-          f"{ansi_text_on(background, roles['yellow'], labels['warning'])} (ANSI 3/yellow/warning) "
-          f"{ansi_text_on(background, roles['red'], labels['error'])} (ANSI 1/red/error)")
+    print(
+        f"  {ansi_text_on(background, foreground, labels['normal'])} (foreground) "
+        f"{ansi_text_on(background, roles['cyan'], labels['accent'])} (ANSI 6/cyan/accent) "
+        f"{ansi_text_on(background, roles['yellow'], labels['warning'])} (ANSI 3/yellow/warning) "
+        f"{ansi_text_on(background, roles['red'], labels['error'])} (ANSI 1/red/error)"
+    )
 
     print("\nANSI example:")
     print(
@@ -536,7 +592,9 @@ def make_terminal_colors(colors, background, foreground, mode, family, roles):
     }
 
 
-def make_theme_model(colors, background, foreground, mode, family, roles, palette_source="", name=""):
+def make_theme_model(
+    colors, background, foreground, mode, family, roles, palette_source="", name=""
+):
     return {
         "generator": f"{APP_NAME} {APP_VERSION}",
         "name": name,
@@ -545,12 +603,16 @@ def make_theme_model(colors, background, foreground, mode, family, roles, palett
         "family": family["name"],
         "family_label": family["label"],
         "mode": mode,
-        "colors": make_terminal_colors(colors, background, foreground, mode, family, roles),
+        "colors": make_terminal_colors(
+            colors, background, foreground, mode, family, roles
+        ),
     }
 
 
 def make_theme(colors, background, foreground, mode, family, roles, palette_source=""):
-    model = make_theme_model(colors, background, foreground, mode, family, roles, palette_source)
+    model = make_theme_model(
+        colors, background, foreground, mode, family, roles, palette_source
+    )
     terminal_colors = model["colors"]
 
     theme = {
@@ -643,10 +705,14 @@ def write_alacritty_theme(path, model):
         "",
         "[colors.normal]",
     ]
-    lines.extend(f"{name} = {toml_value(format_hex(color))}" for name, color in normal.items())
+    lines.extend(
+        f"{name} = {toml_value(format_hex(color))}" for name, color in normal.items()
+    )
     lines.append("")
     lines.append("[colors.bright]")
-    lines.extend(f"{name} = {toml_value(format_hex(color))}" for name, color in bright.items())
+    lines.extend(
+        f"{name} = {toml_value(format_hex(color))}" for name, color in bright.items()
+    )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -829,7 +895,9 @@ def choose_role_color(colors, complement_options, role, current_color):
 def choose_role_mapping(colors, family, mode, current_roles=None):
     roles = current_roles.copy() if current_roles else palette_roles(colors, family)
     print_role_mapping(colors, roles)
-    customize = ask("Change which palette colors feed the ANSI roles? y/n", "n").strip().lower()
+    customize = (
+        ask("Change which palette colors feed the ANSI roles? y/n", "n").strip().lower()
+    )
     if customize not in {"y", "yes"}:
         return roles
 
@@ -874,7 +942,9 @@ def offer_bright_ansi_suggestions(roles, family):
 
 
 def preview_label_defaults() -> str:
-    return " | ".join(DEFAULT_PREVIEW_LABELS[key] for key in ("normal", "accent", "warning", "error"))
+    return " | ".join(
+        DEFAULT_PREVIEW_LABELS[key] for key in ("normal", "accent", "warning", "error")
+    )
 
 
 def parse_preview_labels(raw_value: str) -> dict:
@@ -1074,7 +1144,9 @@ def parallel_theme_suggestions(colors, current_family, current_mode):
     return suggestions
 
 
-def offer_parallel_themes(colors, current_family, current_mode, base_name, output_dir, formats):
+def offer_parallel_themes(
+    colors, current_family, current_mode, base_name, output_dir, formats
+):
     suggestions = parallel_theme_suggestions(colors, current_family, current_mode)
     if not suggestions:
         return
@@ -1135,7 +1207,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 stage += 1
             elif stage == 1:
                 preview_families()
-                family_choice = choose_number("Choose theme family", len(THEME_FAMILIES), 1)
+                family_choice = choose_number(
+                    "Choose theme family", len(THEME_FAMILIES), 1
+                )
                 state["family"] = THEME_FAMILIES[family_choice - 1]
                 stage += 1
             elif stage == 2:
@@ -1148,16 +1222,22 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 stage += 1
             elif stage == 3:
                 if state.get("background"):
-                    print(f"\nCurrent background: #{state['background']} {ansi_bg(state['background'])}")
+                    print(
+                        f"\nCurrent background: #{state['background']} {ansi_bg(state['background'])}"
+                    )
                     if confirm_yes("Keep current background? y/n", default=True):
                         stage += 1
                         continue
                 preview_backgrounds(state["family"])
-                bg_choice = choose_number("Choose background", len(state["family"]["backgrounds"]), 1)
+                bg_choice = choose_number(
+                    "Choose background", len(state["family"]["backgrounds"]), 1
+                )
                 state["background"] = state["family"]["backgrounds"][bg_choice - 1][1]
                 stage += 1
             elif stage == 4:
-                custom_bg = ask("Custom background hex, or press Enter to keep chosen", "")
+                custom_bg = ask(
+                    "Custom background hex, or press Enter to keep chosen", ""
+                )
                 if custom_bg:
                     state["background"] = clean_hex(custom_bg)
                 stage += 1
@@ -1166,8 +1246,12 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 stage += 1
             elif stage == 6:
                 if state.get("foreground"):
-                    print(f"\nCurrent normal text: #{state['foreground']} {ansi_fg(state['foreground'], state['preview_labels']['normal'])}")
-                    if not confirm_yes("Keep current normal text color? y/n", default=True):
+                    print(
+                        f"\nCurrent normal text: #{state['foreground']} {ansi_fg(state['foreground'], state['preview_labels']['normal'])}"
+                    )
+                    if not confirm_yes(
+                        "Keep current normal text color? y/n", default=True
+                    ):
                         state["foreground"] = choose_foreground(
                             state["colors"],
                             state["family"],
@@ -1189,7 +1273,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                     state["mode"],
                     state.get("roles"),
                 )
-                state["roles"] = offer_bright_ansi_suggestions(state["roles"], state["family"])
+                state["roles"] = offer_bright_ansi_suggestions(
+                    state["roles"], state["family"]
+                )
                 stage += 1
             elif stage == 8:
                 preview_theme(
@@ -1210,7 +1296,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 if "formats" not in state:
                     state["formats"] = choose_export_formats()
                 format_labels = ", ".join(state["formats"])
-                if not confirm_yes(f"Export this theme as {format_labels}? y/n", default=True):
+                if not confirm_yes(
+                    f"Export this theme as {format_labels}? y/n", default=True
+                ):
                     print("Cancelled.")
                     return
                 model = make_theme_model(
@@ -1223,7 +1311,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                     state.get("palette_source", ""),
                     state["name"],
                 )
-                written, skipped = export_theme_files_interactive(model, output_dir, state["formats"])
+                written, skipped = export_theme_files_interactive(
+                    model, output_dir, state["formats"]
+                )
                 print_export_results(written, skipped)
                 offer_parallel_themes(
                     state["colors"],
@@ -1248,16 +1338,33 @@ def build_parser():
     parser = argparse.ArgumentParser(
         description=f"{APP_NAME}: make terminal color themes from Coolors URLs or hex palettes."
     )
-    parser.add_argument("--palette", help="Coolors URL or hex colors separated by spaces.")
-    parser.add_argument("--edit", type=Path, help="Start by editing an existing iTerm .itermcolors file.")
-    parser.add_argument("--out", type=Path, default=OUTPUT_DIR, help="Output directory for exported themes.")
+    parser.add_argument(
+        "--palette", help="Coolors URL or hex colors separated by spaces."
+    )
+    parser.add_argument(
+        "--edit",
+        type=Path,
+        help="Start by editing an existing iTerm .itermcolors file.",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=OUTPUT_DIR,
+        help="Output directory for exported themes.",
+    )
     parser.add_argument(
         "--format",
         dest="formats",
         help="Export formats: all, data, or any of iterm, kitty, alacritty, wezterm, data.",
     )
-    parser.add_argument("--list-themes", action="store_true", help="List existing iTerm themes in the output directory.")
-    parser.add_argument("--version", action="version", version=f"{APP_NAME} {APP_VERSION}")
+    parser.add_argument(
+        "--list-themes",
+        action="store_true",
+        help="List existing iTerm themes in the output directory.",
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"{APP_NAME} {APP_VERSION}"
+    )
     return parser
 
 
@@ -1281,7 +1388,11 @@ def initial_state_from_args(args):
 def main(argv=None):
     args = build_parser().parse_args(argv)
     if args.list_themes:
-        themes = sorted(path for path in args.out.glob("*.itermcolors") if path.is_file()) if args.out.exists() else []
+        themes = (
+            sorted(path for path in args.out.glob("*.itermcolors") if path.is_file())
+            if args.out.exists()
+            else []
+        )
         if not themes:
             print(f"No themes found in {args.out}")
             return
