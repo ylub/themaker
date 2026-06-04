@@ -6,3 +6,5 @@ venv/
 used_urls.log
 colors/
 *.itermcolors
+!examples/
+!examples/*.itermcolors

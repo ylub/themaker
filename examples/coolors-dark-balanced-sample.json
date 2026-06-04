@@ -1,0 +1,38 @@
+{
+  "generator": "THEMaker 0.2.0",
+  "name": "coolors-dark-balanced-sample",
+  "palette": "#25CED1 #FFFFFF #FCEADE #FF8A5B #EA526F",
+  "palette_source": "25ced1 ffffff fceade ff8a5b ea526f",
+  "family": "dark",
+  "family_label": "Dark",
+  "mode": "balanced",
+  "colors": {
+    "background": "101418",
+    "foreground": "F8F8F2",
+    "bold": "F8F8F2",
+    "cursor": "FFFFFF",
+    "cursor_text": "101418",
+    "selection": "334155",
+    "selected_text": "101418",
+    "ansi": [
+      "101418",
+      "EA526F",
+      "25CED1",
+      "FCEADE",
+      "25CED1",
+      "FF8A5B",
+      "FFFFFF",
+      "F8F8F2"
+    ],
+    "bright": [
+      "FCEADE",
+      "EA526F",
+      "25CED1",
+      "FCEADE",
+      "25CED1",
+      "FF8A5B",
+      "FFFFFF",
+      "F8F8F2"
+    ]
+  }
+}

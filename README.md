@@ -68,6 +68,12 @@ iterm kitty alacritty wezterm data
 
 If a target file already exists, the wizard asks before overwriting it.
 
+## Examples
+
+The `examples/` folder contains one sample palette exported to every supported
+format. These files are useful for checking the output shape before importing a
+theme into your own terminal.
+
 ## Bright And Sibling Suggestions
 
 After ANSI colors are chosen, THEMaker can suggest brighter ANSI colors for the
