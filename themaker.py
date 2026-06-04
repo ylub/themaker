@@ -470,6 +470,25 @@ def preview_theme(colors, background, foreground, roles, labels):
           f"{ansi_text_on(background, roles['cyan'], labels['accent'])} (ANSI 6/cyan/accent) "
           f"{ansi_text_on(background, roles['yellow'], labels['warning'])} (ANSI 3/yellow/warning) "
           f"{ansi_text_on(background, roles['red'], labels['error'])} (ANSI 1/red/error)")
+
+    print("\nANSI example:")
+    print(
+        f"  {ansi_text_on(background, roles['blue'], '$ themaker export')} "
+        f"{ansi_text_on(background, foreground, '--format all')}"
+    )
+    print(
+        f"  {ansi_text_on(background, roles['green'], 'created')} "
+        f"{ansi_text_on(background, roles['cyan'], 'theme.itermcolors')} "
+        f"{ansi_text_on(background, roles['magenta'], 'theme.lua')}"
+    )
+    print(
+        f"  {ansi_text_on(background, roles['yellow'], 'warning')} "
+        f"{ansi_text_on(background, foreground, 'normal text is close to background')}"
+    )
+    print(
+        f"  {ansi_text_on(background, roles['red'], 'error')} "
+        f"{ansi_text_on(background, foreground, 'invalid hex color')}"
+    )
     if color_distance(foreground, roles["red"]) < 90:
         print("  Warning: normal text is close to the error color.")
     if color_distance(foreground, background) < 90:
