@@ -10,6 +10,8 @@ from pathlib import Path
 
 APP_NAME = "THEMaker"
 APP_VERSION = "0.2.0"
+APP_AUTHOR = "@ylub"
+COOLORS_URL = "https://coolors.co"
 DEFAULT_FG = "F8F8F2"
 APP_DIR = Path(__file__).resolve().parent
 URL_LOG_FILE = APP_DIR / "used_urls.log"
@@ -163,6 +165,36 @@ THEME_FAMILIES = [
         ],
     },
 ]
+
+
+SPLASH = r"""
+ _______ _    _ ______ __  __       _
+|__   __| |  | |  ____|  \/  |     | |
+   | |  | |__| | |__  | \  / | __ _| | _____ _ __
+   | |  |  __  |  __| | |\/| |/ _` | |/ / _ \ '__|
+   | |  | |  | | |____| |  | | (_| |   <  __/ |
+   |_|  |_|  |_|______|_|  |_|\__,_|_|\_\___|_|
+"""
+
+
+def about_text():
+    return "\n".join(
+        [
+            f"{APP_NAME} {APP_VERSION}",
+            "Terminal color themes from Coolors palettes or hex colors.",
+            f"Created by {APP_AUTHOR} on GitHub.",
+            "Built with help from Codex.",
+            f"Inspired by palette ideas from Coolors: {COOLORS_URL}",
+        ]
+    )
+
+
+def show_splash(wait=False):
+    print(SPLASH.strip("\n"))
+    print(about_text())
+    if wait:
+        input("\nPress Enter to start.")
+    print()
 
 
 def clean_hex(h):
@@ -1363,6 +1395,16 @@ def build_parser():
         help="List existing iTerm themes in the output directory.",
     )
     parser.add_argument(
+        "--about",
+        action="store_true",
+        help="Show credits and project information.",
+    )
+    parser.add_argument(
+        "--no-splash",
+        action="store_true",
+        help="Skip the interactive startup banner.",
+    )
+    parser.add_argument(
         "--version", action="version", version=f"{APP_NAME} {APP_VERSION}"
     )
     return parser
@@ -1387,6 +1429,9 @@ def initial_state_from_args(args):
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    if args.about:
+        print(about_text())
+        return
     if args.list_themes:
         themes = (
             sorted(path for path in args.out.glob("*.itermcolors") if path.is_file())
@@ -1401,6 +1446,9 @@ def main(argv=None):
         return
 
     initial_state, start_stage = initial_state_from_args(args)
+    pure_wizard = not any((args.palette, args.edit, args.formats))
+    if pure_wizard and not args.no_splash:
+        show_splash(wait=True)
     while True:
         try:
             run_wizard(initial_state, start_stage, args.out)

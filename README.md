@@ -51,6 +51,18 @@ List existing editable iTerm themes in an output folder:
 python3 themaker.py --list-themes --out colors
 ```
 
+Show credits and project information:
+
+```bash
+python3 themaker.py --about
+```
+
+Skip the startup banner in interactive mode:
+
+```bash
+python3 themaker.py --no-splash
+```
+
 ## Export Choices
 
 At the save step, THEMaker asks what to export:
@@ -130,3 +142,11 @@ Run:
 ```bash
 python3 -m unittest
 ```
+
+## Credits
+
+Created by [@ylub](https://github.com/ylub).
+
+Built with help from Codex.
+
+Inspired by palette ideas from [Coolors](https://coolors.co).
