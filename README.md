@@ -74,6 +74,45 @@ The `examples/` folder contains one sample palette exported to every supported
 format. These files are useful for checking the output shape before importing a
 theme into your own terminal.
 
+## Using Exported Themes
+
+iTerm2:
+
+1. Open Settings.
+2. Go to Profiles, then Colors.
+3. Open Color Presets.
+4. Choose Import and select the `.itermcolors` file.
+
+Kitty:
+
+```bash
+include /path/to/theme.conf
+```
+
+Add that line to your Kitty config, or copy the generated color lines into it.
+
+Alacritty:
+
+```toml
+import = ["/path/to/theme.toml"]
+```
+
+Add that to your Alacritty config, or copy the generated `[colors]` sections
+into it.
+
+WezTerm:
+
+```lua
+local theme = require("theme")
+
+return {
+  colors = theme,
+}
+```
+
+Put the generated `.lua` file somewhere WezTerm can require it, or copy the
+returned table into your WezTerm config.
+
 ## Bright And Sibling Suggestions
 
 After ANSI colors are chosen, THEMaker can suggest brighter ANSI colors for the
