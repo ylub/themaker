@@ -55,14 +55,6 @@ ANSI_ROLE_SAMPLE_WORDS = {
     "magenta": "highlight",
     "cyan": "accent",
 }
-ANSI_ROLE_SEED_COLORS = {
-    "red": "EF4444",
-    "green": "22C55E",
-    "yellow": "FACC15",
-    "blue": "3B82F6",
-    "magenta": "D946EF",
-    "cyan": "06B6D4",
-}
 COMMAND_WORDS = {"back", "quit", "exit", "q", "help", "restart"}
 
 THEME_FAMILIES = [
@@ -332,10 +324,6 @@ def complementary_options(colors, family, mode):
     )
 
 
-def hue_distance(first, second):
-    return min(abs(first - second), 1 - abs(first - second))
-
-
 def hue_for_color(hex_color):
     red, green, blue = hex_to_rgb(hex_color)
     if max(red, green, blue) - min(red, green, blue) < 32:
@@ -384,28 +372,6 @@ def shifted_palette_color(hex_color, shift, family, mode):
     )
 
 
-def ansi_named_color_options(colors, family, mode):
-    palette_hues = [
-        hue for color in colors[:5] if (hue := hue_for_color(color)) is not None
-    ]
-    options = []
-    for role, seed_color in ANSI_ROLE_SEED_COLORS.items():
-        seed_hue = hue_for_color(seed_color)
-        palette_has_hue = seed_hue is not None and any(
-            hue_distance(seed_hue, palette_hue) <= 0.08 for palette_hue in palette_hues
-        )
-        note = (
-            "palette already has this hue" if palette_has_hue else "fills a missing hue"
-        )
-        options.append(
-            (
-                f"ANSI {role} / {ANSI_ROLE_SAMPLE_WORDS[role]} candidate - {note}",
-                tune_suggested_color(seed_color, family, mode),
-            )
-        )
-    return unique_color_options(options)
-
-
 def palette_fit_options(colors, family, mode):
     options = []
     for index, color in enumerate(colors[:5], 1):
@@ -423,13 +389,12 @@ def palette_fit_options(colors, family, mode):
                 shifted_palette_color(color, -0.08, family, mode),
             )
         )
-    return unique_color_options(options)
+    return unique_color_options(options)[:4]
 
 
 def extra_color_options(colors, family, mode):
     return unique_color_options(
-        ansi_named_color_options(colors, family, mode)
-        + complementary_options(colors, family, mode)
+        complementary_options(colors, family, mode)
         + palette_fit_options(colors, family, mode)
     )
 
@@ -506,13 +471,8 @@ def preview_palette_choices(colors):
 def preview_extra_color_choices(options):
     print("\nExtra color suggestions:")
     for i, (name, color) in enumerate(options, 1):
-        sample_word = "sample text"
-        for role, role_word in ANSI_ROLE_SAMPLE_WORDS.items():
-            if f"ANSI {role} /" in name:
-                sample_word = role_word
-                break
         print(
-            f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, sample_word)}  {name}"
+            f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}  {name}"
         )
 
 

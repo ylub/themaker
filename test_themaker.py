@@ -92,14 +92,16 @@ class TheMakerTests(unittest.TestCase):
             self.assertEqual(themaker.clean_hex(color), color)
         self.assertTrue(any(suggestions[role] != roles[role] for role in suggestions))
 
-    def test_extra_color_options_include_missing_hues(self):
+    def test_extra_color_options_include_complements_and_palette_fit_colors(self):
         colors = themaker.parse_palette_input("ef4444 22c55e ec4899 a3a3a3 f8fafc")
         family = themaker.THEME_FAMILIES[0]
         options = themaker.extra_color_options(colors, family, "balanced")
         names = [name for name, _color in options]
-        self.assertTrue(any("ANSI blue" in name for name in names))
-        self.assertTrue(any("ANSI yellow" in name for name in names))
+        self.assertTrue(any("Complement" in name for name in names))
         self.assertTrue(any("Palette-fit" in name for name in names))
+        self.assertLessEqual(
+            sum(1 for name in names if name.startswith("Palette-fit")), 4
+        )
         for _name, color in options:
             self.assertEqual(themaker.clean_hex(color), color)
 

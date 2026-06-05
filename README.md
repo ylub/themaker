@@ -94,6 +94,9 @@ theme into your own terminal.
 
 iTerm2:
 
+On macOS, opening the generated `.itermcolors` file will import it into iTerm2.
+You can also import it manually:
+
 1. Open Settings.
 2. Go to Profiles, then Colors.
 3. Open Color Presets.
@@ -136,8 +139,8 @@ same theme. These are previewed as `current -> suggested` and are only applied
 if you confirm.
 
 When you customize ANSI roles, THEMaker also offers extra color suggestions.
-Those include ANSI-name candidates, palette complements, and palette-fit
-accent colors tuned to the selected theme family.
+Those include palette complements and a few palette-fit accent colors tuned to
+the selected theme family.
 
 After exporting a theme, THEMaker can also suggest sibling themes from the same
 palette, such as a bright pastel variant or a softer dark variant. These are
