@@ -8,5 +8,5 @@ return {
   selection_bg = "#334155",
   selection_fg = "#101418",
   ansi = { "#101418", "#EA526F", "#25CED1", "#FCEADE", "#25CED1", "#FF8A5B", "#FFFFFF", "#F8F8F2" },
-  brights = { "#FCEADE", "#EA526F", "#25CED1", "#FCEADE", "#25CED1", "#FF8A5B", "#FFFFFF", "#F8F8F2" },
+  brights = { "#FCEADE", "#FA5676", "#42EEF1", "#FCEADE", "#42EEF1", "#FF8352", "#FFFFFF", "#FFFFFF" },
 }

@@ -434,6 +434,14 @@ def bright_variant_color(hex_color, family):
     return bright
 
 
+def bright_foreground_color(foreground, background, family):
+    bright = bright_variant_color(foreground, family)
+    cleaned = clean_hex(foreground)
+    if bright == cleaned and brightness(background) < 390 and cleaned != "FFFFFF":
+        return "FFFFFF"
+    return bright
+
+
 def ansi_bg(hex_color, text="      "):
     return ansi_swatch(hex_color, text)
 
@@ -686,6 +694,12 @@ def make_terminal_colors(colors, background, foreground, mode, family, roles):
     else:
         ansi8 = roles["bright_black"]
 
+    bright_roles = {
+        role: bright_variant_color(roles[role], family)
+        for role in ("red", "green", "yellow", "blue", "magenta", "cyan")
+    }
+    bright_foreground = bright_foreground_color(foreground, background, family)
+
     return {
         "background": background,
         "foreground": foreground,
@@ -706,13 +720,13 @@ def make_terminal_colors(colors, background, foreground, mode, family, roles):
         ],
         "bright": [
             ansi8,
-            roles["red"],
-            roles["green"],
-            roles["yellow"],
-            roles["blue"],
-            roles["magenta"],
-            roles["cyan"],
-            foreground,
+            bright_roles["red"],
+            bright_roles["green"],
+            bright_roles["yellow"],
+            bright_roles["blue"],
+            bright_roles["magenta"],
+            bright_roles["cyan"],
+            bright_foreground,
         ],
     }
 

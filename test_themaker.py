@@ -50,6 +50,35 @@ class TheMakerTests(unittest.TestCase):
         self.assertEqual(len(model["colors"]["ansi"]), 8)
         self.assertEqual(len(model["colors"]["bright"]), 8)
 
+    def test_bright_terminal_slots_differ_from_normal_colors(self):
+        colors = themaker.parse_palette_input("f25757 8085b3 84a07c c3d350 eff68d")
+        family = themaker.THEME_FAMILIES[0]
+        roles = {
+            "black": "101418",
+            "red": "FF5252",
+            "green": "87F069",
+            "yellow": "F3FF52",
+            "blue": "616FEF",
+            "magenta": "D269F0",
+            "cyan": "52FFFF",
+            "bright_black": "E0F06A",
+        }
+        model = themaker.make_theme_model(
+            colors,
+            "101418",
+            "EAF6FF",
+            "balanced",
+            family,
+            roles,
+            "",
+            "one second test",
+        )
+        for normal, bright in zip(
+            model["colors"]["ansi"][1:7], model["colors"]["bright"][1:7]
+        ):
+            self.assertNotEqual(normal, bright)
+        self.assertEqual(model["colors"]["bright"][7], "FFFFFF")
+
     def test_exporters_write_expected_files(self):
         model = self.build_model()
         with tempfile.TemporaryDirectory() as directory:
