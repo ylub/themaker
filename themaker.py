@@ -11,6 +11,7 @@ from pathlib import Path
 APP_NAME = "THEMaker"
 APP_VERSION = "0.2.0"
 APP_AUTHOR = "@ylub"
+PROJECT_URL = "https://github.com/ylub/themaker"
 COOLORS_URL = "https://coolors.co"
 DEFAULT_FG = "F8F8F2"
 APP_DIR = Path(__file__).resolve().parent
@@ -183,6 +184,7 @@ def about_text():
             f"{APP_NAME} {APP_VERSION}",
             "Terminal color themes from Coolors palettes or hex colors.",
             f"Created by {APP_AUTHOR} on GitHub.",
+            f"Project: {PROJECT_URL}",
             "Built with help from Codex.",
             f"Inspired by palette ideas from Coolors: {COOLORS_URL}",
         ]

@@ -147,6 +147,8 @@ python3 -m unittest
 
 Created by [@ylub](https://github.com/ylub).
 
+Project repo: [github.com/ylub/themaker](https://github.com/ylub/themaker).
+
 Built with help from Codex.
 
 Inspired by palette ideas from [Coolors](https://coolors.co).
