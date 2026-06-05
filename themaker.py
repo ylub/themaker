@@ -55,6 +55,14 @@ ANSI_ROLE_SAMPLE_WORDS = {
     "magenta": "highlight",
     "cyan": "accent",
 }
+ANSI_ROLE_SEED_COLORS = {
+    "red": "EF4444",
+    "green": "22C55E",
+    "yellow": "FACC15",
+    "blue": "3B82F6",
+    "magenta": "D946EF",
+    "cyan": "06B6D4",
+}
 COMMAND_WORDS = {"back", "quit", "exit", "q", "help", "restart"}
 
 THEME_FAMILIES = [
@@ -201,6 +209,10 @@ def show_splash(wait=False):
 
 def clean_hex(h):
     h = h.strip().lstrip("#")
+    if re.fullmatch(r"[0-9a-fA-F]{4}", h):
+        return "".join(channel * 2 for channel in h[:3]).upper()
+    if re.fullmatch(r"[0-9a-fA-F]{8}", h):
+        return h[:6].upper()
     if not re.fullmatch(r"[0-9a-fA-F]{6}", h):
         raise ValueError(f"Invalid hex color: {h}")
     return h.upper()
@@ -320,28 +332,141 @@ def complementary_options(colors, family, mode):
     )
 
 
-def bright_variant_color(hex_color, family):
+def hue_distance(first, second):
+    return min(abs(first - second), 1 - abs(first - second))
+
+
+def hue_for_color(hex_color):
+    red, green, blue = hex_to_rgb(hex_color)
+    if max(red, green, blue) - min(red, green, blue) < 32:
+        return None
+    r, g, b = (channel / 255 for channel in (red, green, blue))
+    hue, _lightness, saturation = colorsys.rgb_to_hls(r, g, b)
+    return None if saturation < 0.12 else hue
+
+
+def tune_suggested_color(hex_color, family, mode):
     r, g, b = (channel / 255 for channel in hex_to_rgb(hex_color))
+    hue, lightness, saturation = colorsys.rgb_to_hls(r, g, b)
+    family_name = family["name"]
+
+    if family_name == "pastel":
+        saturation = min(max(saturation, 0.45), 0.62)
+        lightness = 0.76 if mode == "bright" else 0.82
+    elif family_name == "light":
+        saturation = min(max(saturation, 0.58), 0.82)
+        lightness = 0.46 if mode == "bright" else 0.42
+    elif family_name == "neon":
+        saturation = max(saturation, 0.92)
+        lightness = 0.62
+    elif family_name == "high contrast":
+        saturation = max(saturation, 0.95)
+        lightness = 0.58
+    else:
+        saturation = min(max(saturation, 0.72), 0.92)
+        lightness = 0.64 if mode == "bright" else 0.58
+
+    rgb = colorsys.hls_to_rgb(hue, lightness, min(saturation, 1.0))
+    return rgb_to_hex(tuple(round(channel * 255) for channel in rgb))
+
+
+def shifted_palette_color(hex_color, shift, family, mode):
+    r, g, b = (channel / 255 for channel in hex_to_rgb(hex_color))
+    hue, _lightness, saturation = colorsys.rgb_to_hls(r, g, b)
+    if saturation < 0.12:
+        return clean_hex(hex_color)
+    hue = (hue + shift) % 1.0
+    rgb = colorsys.hls_to_rgb(hue, 0.58, max(saturation, 0.72))
+    return tune_suggested_color(
+        rgb_to_hex(tuple(round(channel * 255) for channel in rgb)),
+        family,
+        mode,
+    )
+
+
+def ansi_named_color_options(colors, family, mode):
+    palette_hues = [
+        hue for color in colors[:5] if (hue := hue_for_color(color)) is not None
+    ]
+    options = []
+    for role, seed_color in ANSI_ROLE_SEED_COLORS.items():
+        seed_hue = hue_for_color(seed_color)
+        palette_has_hue = seed_hue is not None and any(
+            hue_distance(seed_hue, palette_hue) <= 0.08 for palette_hue in palette_hues
+        )
+        note = (
+            "palette already has this hue" if palette_has_hue else "fills a missing hue"
+        )
+        options.append(
+            (
+                f"ANSI {role} / {ANSI_ROLE_SAMPLE_WORDS[role]} candidate - {note}",
+                tune_suggested_color(seed_color, family, mode),
+            )
+        )
+    return unique_color_options(options)
+
+
+def palette_fit_options(colors, family, mode):
+    options = []
+    for index, color in enumerate(colors[:5], 1):
+        if hue_for_color(color) is None:
+            continue
+        options.append(
+            (
+                f"Palette-fit cool accent from palette {index}",
+                shifted_palette_color(color, 0.08, family, mode),
+            )
+        )
+        options.append(
+            (
+                f"Palette-fit warm accent from palette {index}",
+                shifted_palette_color(color, -0.08, family, mode),
+            )
+        )
+    return unique_color_options(options)
+
+
+def extra_color_options(colors, family, mode):
+    return unique_color_options(
+        ansi_named_color_options(colors, family, mode)
+        + complementary_options(colors, family, mode)
+        + palette_fit_options(colors, family, mode)
+    )
+
+
+def bright_variant_color(hex_color, family):
+    red, green, blue = hex_to_rgb(hex_color)
+    if max(red, green, blue) - min(red, green, blue) < 32:
+        return clean_hex(hex_color)
+
+    r, g, b = (channel / 255 for channel in (red, green, blue))
     hue, lightness, saturation = colorsys.rgb_to_hls(r, g, b)
     family_name = family["name"]
 
     if saturation < 0.08:
         return clean_hex(hex_color)
 
-    saturation = max(saturation, 0.78)
-    if family_name in {"light", "pastel"}:
-        lightness = min(max(lightness, 0.42), 0.66)
-    else:
-        lightness = min(max(lightness, 0.54), 0.72)
-
+    original = clean_hex(hex_color)
+    saturation = min(max(saturation + 0.16, 0.82), 1.0)
     if family_name == "pastel":
-        saturation = min(saturation, 0.62)
-        lightness = max(lightness, 0.72)
-    elif family_name == "neon":
+        lightness = 0.74 if lightness > 0.78 else min(lightness + 0.10, 0.78)
+        saturation = min(saturation, 0.68)
+    elif family_name == "light":
+        lightness = 0.48 if lightness > 0.62 else min(lightness + 0.08, 0.62)
+    else:
+        lightness = 0.66 if lightness > 0.60 else min(lightness + 0.12, 0.68)
+
+    if family_name == "neon":
         saturation = max(saturation, 0.92)
+        lightness = 0.64
 
     rgb = colorsys.hls_to_rgb(hue, lightness, min(saturation, 1.0))
-    return rgb_to_hex(tuple(round(channel * 255) for channel in rgb))
+    bright = rgb_to_hex(tuple(round(channel * 255) for channel in rgb))
+    if bright == original:
+        lightness = min(max(lightness + 0.08, 0.35), 0.72)
+        rgb = colorsys.hls_to_rgb(hue, lightness, min(saturation, 1.0))
+        bright = rgb_to_hex(tuple(round(channel * 255) for channel in rgb))
+    return bright
 
 
 def ansi_bg(hex_color, text="      "):
@@ -378,11 +503,16 @@ def preview_palette_choices(colors):
         print(f"  {i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}")
 
 
-def preview_complementary_choices(options):
-    print("\nComplementary choices:")
+def preview_extra_color_choices(options):
+    print("\nExtra color suggestions:")
     for i, (name, color) in enumerate(options, 1):
+        sample_word = "sample text"
+        for role, role_word in ANSI_ROLE_SAMPLE_WORDS.items():
+            if f"ANSI {role} /" in name:
+                sample_word = role_word
+                break
         print(
-            f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, 'sample text')}  {name}"
+            f"  c{i}. #{color} {ansi_bg(color)} {ansi_fg(color, sample_word)}  {name}"
         )
 
 
@@ -456,6 +586,7 @@ def preview_foregrounds(options, background, error_color, labels):
         )
         print(
             f"  {index}. #{color} {ansi_bg(color)} "
+            f"{ansi_fg(color, labels['normal'])} "
             f"{ansi_text_on(background, color, labels['normal'])}  {name}{error_note}{bg_note}"
         )
 
@@ -905,9 +1036,9 @@ def print_role_mapping(colors, roles):
         )
 
 
-def choose_role_color(colors, complement_options, role, current_color):
+def choose_role_color(colors, extra_options, role, current_color):
     prompt = (
-        f"ANSI {role} color: palette 1-{len(colors)}, complement c1-c{len(complement_options)}, "
+        f"ANSI {role} color: palette 1-{len(colors)}, suggestion c1-c{len(extra_options)}, "
         "custom hex, or Enter to keep"
     )
     raw = ask(prompt, "").strip()
@@ -917,13 +1048,13 @@ def choose_role_color(colors, complement_options, role, current_color):
         return colors[int(raw) - 1]
     if raw.lower().startswith("c") and raw[1:].isdigit():
         index = int(raw[1:])
-        if 1 <= index <= len(complement_options):
-            return complement_options[index - 1][1]
+        if 1 <= index <= len(extra_options):
+            return extra_options[index - 1][1]
     try:
         return clean_hex(raw)
     except ValueError as error:
         print(error)
-        return choose_role_color(colors, complement_options, role, current_color)
+        return choose_role_color(colors, extra_options, role, current_color)
 
 
 def choose_role_mapping(colors, family, mode, current_roles=None):
@@ -935,12 +1066,12 @@ def choose_role_mapping(colors, family, mode, current_roles=None):
     if customize not in {"y", "yes"}:
         return roles
 
-    complements = complementary_options(colors, family, mode)
-    print("\nUse palette numbers, complementary choices, or type a custom hex.")
+    extra_options = extra_color_options(colors, family, mode)
+    print("\nUse palette numbers, extra suggestions, or type a custom hex.")
     preview_palette_choices(colors)
-    preview_complementary_choices(complements)
+    preview_extra_color_choices(extra_options)
     for role in ("red", "green", "yellow", "blue", "magenta", "cyan"):
-        roles[role] = choose_role_color(colors, complements, role, roles[role])
+        roles[role] = choose_role_color(colors, extra_options, role, roles[role])
     print_role_mapping(colors, roles)
     return roles
 
@@ -1052,8 +1183,8 @@ def parse_export_formats(raw_value):
 def choose_export_formats():
     print("\nExport options:")
     print("  all      iTerm2, Kitty, Alacritty, WezTerm, and data JSON")
-    print("  one      Type one format name")
-    print("  some     Type multiple format names")
+    print("  one      Choose one format")
+    print("  some     Choose a few formats")
     print("  data     Save portable JSON data for someone else to export")
     print("Formats: iterm, kitty, alacritty, wezterm, data")
     while True:
@@ -1185,19 +1316,19 @@ def offer_parallel_themes(
     if not suggestions:
         return
 
-    print("\nParallel theme ideas from the same palette:")
+    print("\nSibling theme ideas from the same palette:")
     for index, (mode, family) in enumerate(suggestions, 1):
         print(f"  {index}. {family['label']} {mode.title()}")
 
-    if not confirm_yes("Make one of these parallel themes too? y/n", default=False):
+    if not confirm_yes("Create one of these sibling themes too? y/n", default=False):
         return
 
-    choice = choose_number("Choose parallel theme", len(suggestions), 1)
+    choice = choose_number("Choose sibling theme", len(suggestions), 1)
     mode, family = suggestions[choice - 1]
     background = family["backgrounds"][0][1]
     roles = palette_roles(colors, family)
     foreground = foreground_options(colors, family, background)[0][1]
-    name = ask("Parallel theme name", f"{base_name} {family['label']} {mode.title()}")
+    name = ask("Sibling theme name", f"{base_name} {family['label']} {mode.title()}")
     model = make_theme_model(
         colors,
         background,
@@ -1330,9 +1461,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 if "formats" not in state:
                     state["formats"] = choose_export_formats()
                 format_labels = ", ".join(state["formats"])
-                if not confirm_yes(
-                    f"Export this theme as {format_labels}? y/n", default=True
-                ):
+                print(f"\nReady to export: {state['name']}")
+                print(f"Selected formats: {format_labels}")
+                if not confirm_yes("Create these files? y/n", default=True):
                     print("Cancelled.")
                     return
                 model = make_theme_model(
@@ -1360,6 +1491,7 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 if "iterm" in state["formats"]:
                     print("\nImport in iTerm:")
                     print("Settings → Profiles → Colors → Color Presets → Import")
+                print("\nDone.")
                 return
         except WizardBack:
             stage = max(0, stage - 1)

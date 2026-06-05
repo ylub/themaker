@@ -5,7 +5,6 @@ from pathlib import Path
 
 import themaker
 
-
 PALETTE = "25ced1 ffffff fceade ff8a5b ea526f"
 
 
@@ -29,8 +28,16 @@ class TheMakerTests(unittest.TestCase):
         expected = ["25CED1", "FFFFFF", "FCEADE", "FF8A5B", "EA526F"]
         self.assertEqual(themaker.parse_palette_input(PALETTE), expected)
         self.assertEqual(
-            themaker.parse_palette_input("https://coolors.co/25ced1-ffffff-fceade-ff8a5b-ea526f"),
+            themaker.parse_palette_input(
+                "https://coolors.co/25ced1-ffffff-fceade-ff8a5b-ea526f"
+            ),
             expected,
+        )
+
+    def test_parse_palette_input_accepts_alpha_hex(self):
+        self.assertEqual(
+            themaker.parse_palette_input("#abcd 11223344 25ced1ff ffffff80 00000000"),
+            ["AABBCC", "112233", "25CED1", "FFFFFF", "000000"],
         )
 
     def test_parse_palette_input_rejects_short_palette(self):
@@ -78,8 +85,22 @@ class TheMakerTests(unittest.TestCase):
         family = themaker.THEME_FAMILIES[0]
         roles = themaker.palette_roles(colors, family)
         suggestions = themaker.bright_role_suggestions(roles, family)
-        self.assertEqual(set(suggestions), {"red", "green", "yellow", "blue", "magenta", "cyan"})
+        self.assertEqual(
+            set(suggestions), {"red", "green", "yellow", "blue", "magenta", "cyan"}
+        )
         for color in suggestions.values():
+            self.assertEqual(themaker.clean_hex(color), color)
+        self.assertTrue(any(suggestions[role] != roles[role] for role in suggestions))
+
+    def test_extra_color_options_include_missing_hues(self):
+        colors = themaker.parse_palette_input("ef4444 22c55e ec4899 a3a3a3 f8fafc")
+        family = themaker.THEME_FAMILIES[0]
+        options = themaker.extra_color_options(colors, family, "balanced")
+        names = [name for name, _color in options]
+        self.assertTrue(any("ANSI blue" in name for name in names))
+        self.assertTrue(any("ANSI yellow" in name for name in names))
+        self.assertTrue(any("Palette-fit" in name for name in names))
+        for _name, color in options:
             self.assertEqual(themaker.clean_hex(color), color)
 
 

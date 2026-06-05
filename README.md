@@ -27,6 +27,10 @@ Use a palette from the command line and continue in the wizard:
 python3 themaker.py --palette "25ced1 ffffff fceade ff8a5b ea526f"
 ```
 
+Hex colors may be written as 6-digit RGB, 8-digit RGBA, or short 4-digit RGBA.
+Alpha values are accepted for convenience and ignored when exporting terminal
+themes.
+
 Choose export formats up front:
 
 ```bash
@@ -130,6 +134,10 @@ returned table into your WezTerm config.
 After ANSI colors are chosen, THEMaker can suggest brighter ANSI colors for the
 same theme. These are previewed as `current -> suggested` and are only applied
 if you confirm.
+
+When you customize ANSI roles, THEMaker also offers extra color suggestions.
+Those include ANSI-name candidates, palette complements, and palette-fit
+accent colors tuned to the selected theme family.
 
 After exporting a theme, THEMaker can also suggest sibling themes from the same
 palette, such as a bright pastel variant or a softer dark variant. These are
