@@ -86,11 +86,12 @@ class TheMakerTests(unittest.TestCase):
             written, skipped = themaker.export_theme_files(
                 model,
                 out_dir,
-                ["iterm", "kitty", "alacritty", "wezterm", "yaml", "data"],
+                ["iterm", "terminal", "kitty", "alacritty", "wezterm", "yaml", "data"],
             )
             self.assertEqual(skipped, [])
-            self.assertEqual(len(written), 6)
+            self.assertEqual(len(written), 7)
             self.assertTrue((out_dir / "sample.itermcolors").exists())
+            self.assertTrue((out_dir / "sample.terminal").exists())
             self.assertIn("foreground #F8F8F2", (out_dir / "sample.conf").read_text())
             self.assertIn("[colors.primary]", (out_dir / "sample.toml").read_text())
             self.assertIn("return {", (out_dir / "sample.lua").read_text())
@@ -104,6 +105,13 @@ class TheMakerTests(unittest.TestCase):
             with (out_dir / "sample.itermcolors").open("rb") as handle:
                 plist = plistlib.load(handle)
             self.assertEqual(plist[themaker.ORIGINAL_PALETTE_KEY], model["palette"])
+            with (out_dir / "sample.terminal").open("rb") as handle:
+                terminal_plist = plistlib.load(handle)
+            self.assertEqual(terminal_plist["TextColor"], themaker.rgb_plist("F8F8F2"))
+            self.assertEqual(
+                terminal_plist["ANSIBrightRedColor"],
+                themaker.rgb_plist(model["colors"]["bright"][1]),
+            )
 
     def test_existing_files_skip_without_overwrite(self):
         model = self.build_model()

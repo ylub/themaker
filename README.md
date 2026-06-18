@@ -6,6 +6,7 @@ themes.
 It currently exports:
 
 - iTerm2 `.itermcolors`
+- macOS Terminal `.terminal`
 - Kitty `.conf`
 - Alacritty `.toml`
 - WezTerm `.lua`
@@ -13,6 +14,12 @@ It currently exports:
 - Portable JSON theme data for someone else or another tool to export later
 
 THEMaker uses only the Python standard library.
+
+![THEMaker ANSI color suggestions](docs/themaker1.png)
+
+![THEMaker terminal preview](docs/themaker2.png)
+
+Screenshots captured in iTerm2.
 
 ## Quick Start
 
@@ -86,12 +93,13 @@ At the save step, THEMaker asks what to export:
 Supported format names are:
 
 ```text
-iterm kitty alacritty wezterm yaml data
+iterm terminal kitty alacritty wezterm yaml data
 ```
 
 | Format | Extension | Use |
 | --- | --- | --- |
 | `iterm` | `.itermcolors` | Import into iTerm2. |
+| `terminal` | `.terminal` | Import into macOS Terminal. |
 | `kitty` | `.conf` | Include or copy into Kitty config. |
 | `alacritty` | `.toml` | Import or copy into Alacritty config. |
 | `wezterm` | `.lua` | Require or copy into WezTerm config. |
@@ -117,6 +125,16 @@ You can also import it manually:
 2. Go to Profiles, then Colors.
 3. Open Color Presets.
 4. Choose Import and select the `.itermcolors` file.
+
+macOS Terminal:
+
+Open the generated `.terminal` file to import the preset into Terminal.
+You can also import it manually from Terminal settings:
+
+1. Open Settings.
+2. Go to Profiles.
+3. Open the More menu.
+4. Choose Import and select the `.terminal` file.
 
 Kitty:
 

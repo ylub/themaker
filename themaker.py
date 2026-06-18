@@ -22,7 +22,15 @@ PALETTE_SOURCE_KEY = "TheMaker Palette Source"
 GENERATOR_KEY = "TheMaker Generator"
 FAMILY_KEY = "TheMaker Family"
 MODE_KEY = "TheMaker Mode"
-EXPORT_FORMATS = ("iterm", "kitty", "alacritty", "wezterm", "yaml", "data")
+EXPORT_FORMATS = (
+    "iterm",
+    "terminal",
+    "kitty",
+    "alacritty",
+    "wezterm",
+    "yaml",
+    "data",
+)
 TERMINAL_ROLE_NAMES = (
     "black",
     "red",
@@ -801,6 +809,36 @@ def write_iterm_theme(path, model):
         plistlib.dump(theme, handle)
 
 
+def write_terminal_theme(path, model):
+    colors = model["colors"]
+    ansi_names = (
+        "Black",
+        "Red",
+        "Green",
+        "Yellow",
+        "Blue",
+        "Magenta",
+        "Cyan",
+        "White",
+    )
+    theme = {
+        "name": model["name"] or "THEMaker Theme",
+        "type": "Window Settings",
+        "ProfileCurrentVersion": 2.07,
+        "BackgroundColor": rgb_plist(colors["background"]),
+        "TextColor": rgb_plist(colors["foreground"]),
+        "BoldTextColor": rgb_plist(colors["bold"]),
+        "CursorColor": rgb_plist(colors["cursor"]),
+        "SelectionColor": rgb_plist(colors["selection"]),
+    }
+    for name, color in zip(ansi_names, colors["ansi"]):
+        theme[f"ANSI{name}Color"] = rgb_plist(color)
+    for name, color in zip(ansi_names, colors["bright"]):
+        theme[f"ANSIBright{name}Color"] = rgb_plist(color)
+    with path.open("wb") as handle:
+        plistlib.dump(theme, handle)
+
+
 def write_kitty_theme(path, model):
     colors = model["colors"]
     lines = [
@@ -926,6 +964,7 @@ def write_theme_data(path, model):
 
 EXPORTERS = {
     "iterm": (".itermcolors", write_iterm_theme),
+    "terminal": (".terminal", write_terminal_theme),
     "kitty": (".conf", write_kitty_theme),
     "alacritty": (".toml", write_alacritty_theme),
     "wezterm": (".lua", write_wezterm_theme),
@@ -1172,6 +1211,11 @@ def parse_export_formats(raw_value):
     aliases = {
         "i": "iterm",
         "iterm2": "iterm",
+        "t": "terminal",
+        "term": "terminal",
+        "terminalapp": "terminal",
+        "macos": "terminal",
+        "mac": "terminal",
         "k": "kitty",
         "al": "alacritty",
         "alac": "alacritty",
@@ -1199,11 +1243,13 @@ def parse_export_formats(raw_value):
 
 def choose_export_formats():
     print("\nExport options:")
-    print("  all      iTerm2, Kitty, Alacritty, WezTerm, YAML, and data JSON")
+    print(
+        "  all      iTerm2, macOS Terminal, Kitty, Alacritty, WezTerm, YAML, and data JSON"
+    )
     print("  one      Choose one format")
     print("  some     Choose a few formats")
     print("  data     Save portable JSON data for someone else to export")
-    print("Formats: iterm, kitty, alacritty, wezterm, yaml, data")
+    print("Formats: iterm, terminal, kitty, alacritty, wezterm, yaml, data")
     while True:
         raw = ask("Export formats", "all")
         if raw.strip().lower() == "one":
@@ -1538,7 +1584,7 @@ def build_parser():
     parser.add_argument(
         "--format",
         dest="formats",
-        help="Export formats: all, data, or any of iterm, kitty, alacritty, wezterm, yaml, data.",
+        help="Export formats: all, data, or any of iterm, terminal, kitty, alacritty, wezterm, yaml, data.",
     )
     parser.add_argument(
         "--list-themes",
