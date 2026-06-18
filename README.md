@@ -151,7 +151,7 @@ returned table into your WezTerm config.
 YAML:
 
 The `.yaml` export follows the source scheme guidance from
-[`schemes/README.md` in `mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes/blob/master/schemes/README.md).
+[`yaml/README.md` in `mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes/blob/master/yaml/README.md).
 It writes `color_01` through `color_16`, plus the optional extra keys described
 there, including `badge`, `bold`, `cursor_guide`, `cursor_text`, `link`,
 `selection_text`, `selection`, `tab`, and `underline`.
