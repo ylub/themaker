@@ -9,7 +9,7 @@ It currently exports:
 - Kitty `.conf`
 - Alacritty `.toml`
 - WezTerm `.lua`
-- Gogh-compatible source `.yaml` for terminal color scheme repos
+- Source `.yaml` for terminal color scheme repos
 - Portable JSON theme data for someone else or another tool to export later
 
 THEMaker uses only the Python standard library.
@@ -20,6 +20,12 @@ Run the wizard:
 
 ```bash
 python3 themaker.py
+```
+
+Check the version:
+
+```bash
+python3 themaker.py --version
 ```
 
 Use a palette from the command line and continue in the wizard:
@@ -83,6 +89,15 @@ Supported format names are:
 iterm kitty alacritty wezterm yaml data
 ```
 
+| Format | Extension | Use |
+| --- | --- | --- |
+| `iterm` | `.itermcolors` | Import into iTerm2. |
+| `kitty` | `.conf` | Include or copy into Kitty config. |
+| `alacritty` | `.toml` | Import or copy into Alacritty config. |
+| `wezterm` | `.lua` | Require or copy into WezTerm config. |
+| `yaml` | `.yaml` | Submit source schemes to terminal color scheme repos. |
+| `data` | `.json` | Save portable theme data for another tool or maintainer. |
+
 If a target file already exists, the wizard asks before overwriting it.
 
 ## Examples
@@ -135,9 +150,23 @@ returned table into your WezTerm config.
 
 YAML:
 
-The `.yaml` export is a Gogh-style source color scheme with `color_01` through
-`color_16`, plus compatible extra keys such as `bold`, `cursor_text`,
-`selection_text`, `selection`, `link`, `tab`, and `underline`.
+The `.yaml` export follows the source scheme guidance from
+[`schemes/README.md` in `mbadolato/iTerm2-Color-Schemes`](https://github.com/mbadolato/iTerm2-Color-Schemes/blob/master/schemes/README.md).
+It writes `color_01` through `color_16`, plus the optional extra keys described
+there, including `badge`, `bold`, `cursor_guide`, `cursor_text`, `link`,
+`selection_text`, `selection`, `tab`, and `underline`.
+
+## Contributing Schemes
+
+For terminal color scheme repositories that accept source YAML files, export
+with:
+
+```bash
+python3 themaker.py --format yaml
+```
+
+Review the generated file before submitting it, especially the theme name,
+normal ANSI colors, bright ANSI colors, selection colors, and cursor colors.
 
 ## Bright And Sibling Suggestions
 
@@ -160,6 +189,11 @@ Run:
 ```bash
 python3 -m unittest
 ```
+
+## Releases
+
+The first public release should be tagged as `v0.2.0` after the public export
+branch is merged.
 
 ## Credits
 
