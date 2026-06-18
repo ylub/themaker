@@ -569,7 +569,7 @@ def preview_foregrounds(options, background, error_color, labels):
 
 def palette_roles(colors, family):
     sorted_colors = sorted(colors, key=brightness)
-    darkest, second_darkest = sorted_colors[0], sorted_colors[1]
+    second_darkest = sorted_colors[1]
     middle = sorted_colors[len(sorted_colors) // 2]
     second_brightest, brightest = sorted_colors[-2], sorted_colors[-1]
     c1, c2, c3, c4, c5 = colors[:5]
