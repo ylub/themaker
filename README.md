@@ -20,7 +20,7 @@ THEMaker uses only the Python standard library.
 
 ![THEMaker terminal preview](docs/themaker2.png)
 
-Screenshots captured in iTerm2.
+Screenshots captured in iTerm2 with help from [macshot](https://github.com/HappyGumbo/macshot).
 
 ## Quick Start
 
@@ -226,5 +226,7 @@ Created by [@ylub](https://github.com/ylub).
 Project repo: [github.com/ylub/themaker](https://github.com/ylub/themaker).
 
 Built with help from Codex.
+
+Screenshot assist from [macshot](https://github.com/HappyGumbo/macshot).
 
 Inspired by palette ideas from [Coolors](https://coolors.co).
