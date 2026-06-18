@@ -86,14 +86,19 @@ class TheMakerTests(unittest.TestCase):
             written, skipped = themaker.export_theme_files(
                 model,
                 out_dir,
-                ["iterm", "kitty", "alacritty", "wezterm", "data"],
+                ["iterm", "kitty", "alacritty", "wezterm", "yaml", "data"],
             )
             self.assertEqual(skipped, [])
-            self.assertEqual(len(written), 5)
+            self.assertEqual(len(written), 6)
             self.assertTrue((out_dir / "sample.itermcolors").exists())
             self.assertIn("foreground #F8F8F2", (out_dir / "sample.conf").read_text())
             self.assertIn("[colors.primary]", (out_dir / "sample.toml").read_text())
             self.assertIn("return {", (out_dir / "sample.lua").read_text())
+            yaml_text = (out_dir / "sample.yaml").read_text()
+            self.assertIn('color_01: "#101418"', yaml_text)
+            self.assertIn('color_16: "#FFFFFF"', yaml_text)
+            self.assertIn('badge: "#FFFFFF"', yaml_text)
+            self.assertIn('selection_text: "#101418"', yaml_text)
             self.assertIn('"palette"', (out_dir / "sample.json").read_text())
 
             with (out_dir / "sample.itermcolors").open("rb") as handle:

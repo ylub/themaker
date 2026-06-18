@@ -9,6 +9,7 @@ It currently exports:
 - Kitty `.conf`
 - Alacritty `.toml`
 - WezTerm `.lua`
+- Gogh-compatible source `.yaml` for terminal color scheme repos
 - Portable JSON theme data for someone else or another tool to export later
 
 THEMaker uses only the Python standard library.
@@ -79,7 +80,7 @@ At the save step, THEMaker asks what to export:
 Supported format names are:
 
 ```text
-iterm kitty alacritty wezterm data
+iterm kitty alacritty wezterm yaml data
 ```
 
 If a target file already exists, the wizard asks before overwriting it.
@@ -131,6 +132,12 @@ return {
 
 Put the generated `.lua` file somewhere WezTerm can require it, or copy the
 returned table into your WezTerm config.
+
+YAML:
+
+The `.yaml` export is a Gogh-style source color scheme with `color_01` through
+`color_16`, plus compatible extra keys such as `bold`, `cursor_text`,
+`selection_text`, `selection`, `link`, `tab`, and `underline`.
 
 ## Bright And Sibling Suggestions
 
