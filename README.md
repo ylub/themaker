@@ -10,6 +10,7 @@ It currently exports:
 - Kitty `.conf`
 - Alacritty `.toml`
 - WezTerm `.lua`
+- CotEditor `.cottheme`
 - Source `.yaml` for terminal color scheme repos
 - Portable JSON theme data for someone else or another tool to export later
 
@@ -93,7 +94,7 @@ At the save step, THEMaker asks what to export:
 Supported format names are:
 
 ```text
-iterm terminal kitty alacritty wezterm yaml data
+iterm terminal kitty alacritty wezterm coteditor yaml data
 ```
 
 | Format | Extension | Use |
@@ -103,6 +104,7 @@ iterm terminal kitty alacritty wezterm yaml data
 | `kitty` | `.conf` | Include or copy into Kitty config. |
 | `alacritty` | `.toml` | Import or copy into Alacritty config. |
 | `wezterm` | `.lua` | Require or copy into WezTerm config. |
+| `coteditor` | `.cottheme` | Import into CotEditor. |
 | `yaml` | `.yaml` | Submit source schemes to terminal color scheme repos. |
 | `data` | `.json` | Save portable theme data for another tool or maintainer. |
 
@@ -166,6 +168,11 @@ return {
 Put the generated `.lua` file somewhere WezTerm can require it, or copy the
 returned table into your WezTerm config.
 
+CotEditor:
+
+Open the generated `.cottheme` file, or import it from CotEditor's Appearance
+settings.
+
 YAML:
 
 The `.yaml` export follows the source scheme guidance from
@@ -210,8 +217,7 @@ python3 -m unittest
 
 ## Releases
 
-The first public release should be tagged as `v0.2.0` after the public export
-branch is merged.
+Public releases are tagged on GitHub. The first public release is `v0.2.0`.
 
 ## Credits
 

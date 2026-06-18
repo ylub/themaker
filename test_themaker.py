@@ -1,3 +1,4 @@
+import json
 import plistlib
 import tempfile
 import unittest
@@ -86,15 +87,28 @@ class TheMakerTests(unittest.TestCase):
             written, skipped = themaker.export_theme_files(
                 model,
                 out_dir,
-                ["iterm", "terminal", "kitty", "alacritty", "wezterm", "yaml", "data"],
+                [
+                    "iterm",
+                    "terminal",
+                    "kitty",
+                    "alacritty",
+                    "wezterm",
+                    "coteditor",
+                    "yaml",
+                    "data",
+                ],
             )
             self.assertEqual(skipped, [])
-            self.assertEqual(len(written), 7)
+            self.assertEqual(len(written), 8)
             self.assertTrue((out_dir / "sample.itermcolors").exists())
             self.assertTrue((out_dir / "sample.terminal").exists())
             self.assertIn("foreground #F8F8F2", (out_dir / "sample.conf").read_text())
             self.assertIn("[colors.primary]", (out_dir / "sample.toml").read_text())
             self.assertIn("return {", (out_dir / "sample.lua").read_text())
+            cottheme = json.loads((out_dir / "sample.cottheme").read_text())
+            self.assertEqual(cottheme["background"]["color"], "#101418")
+            self.assertEqual(cottheme["text"]["color"], "#F8F8F2")
+            self.assertEqual(cottheme["metadata"]["author"], "@ylub")
             yaml_text = (out_dir / "sample.yaml").read_text()
             self.assertIn('color_01: "#101418"', yaml_text)
             self.assertIn('color_16: "#FFFFFF"', yaml_text)
