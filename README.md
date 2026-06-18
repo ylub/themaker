@@ -11,6 +11,7 @@ It currently exports:
 - Alacritty `.toml`
 - WezTerm `.lua`
 - CotEditor `.cottheme`
+- Tuxedo `.tuxedo.toml`
 - Source `.yaml` for terminal color scheme repos
 - Portable JSON theme data for someone else or another tool to export later
 
@@ -94,7 +95,7 @@ At the save step, THEMaker asks what to export:
 Supported format names are:
 
 ```text
-iterm terminal kitty alacritty wezterm coteditor yaml data
+iterm terminal kitty alacritty wezterm coteditor tuxedo yaml data
 ```
 
 | Format | Extension | Use |
@@ -105,6 +106,7 @@ iterm terminal kitty alacritty wezterm coteditor yaml data
 | `alacritty` | `.toml` | Import or copy into Alacritty config. |
 | `wezterm` | `.lua` | Require or copy into WezTerm config. |
 | `coteditor` | `.cottheme` | Import into CotEditor. |
+| `tuxedo` | `.tuxedo.toml` | Copy into Tuxedo's themes directory. |
 | `yaml` | `.yaml` | Submit source schemes to terminal color scheme repos. |
 | `data` | `.json` | Save portable theme data for another tool or maintainer. |
 
@@ -172,6 +174,12 @@ CotEditor:
 
 Open the generated `.cottheme` file, or import it from CotEditor's Appearance
 settings.
+
+Tuxedo:
+
+Copy the generated `.tuxedo.toml` file into
+`${XDG_CONFIG_HOME:-$HOME/.config}/tuxedo/themes/`. You may rename it to any
+theme filename you prefer, then press `T` in Tuxedo to select it.
 
 YAML:
 

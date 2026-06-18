@@ -94,12 +94,13 @@ class TheMakerTests(unittest.TestCase):
                     "alacritty",
                     "wezterm",
                     "coteditor",
+                    "tuxedo",
                     "yaml",
                     "data",
                 ],
             )
             self.assertEqual(skipped, [])
-            self.assertEqual(len(written), 8)
+            self.assertEqual(len(written), 9)
             self.assertTrue((out_dir / "sample.itermcolors").exists())
             self.assertTrue((out_dir / "sample.terminal").exists())
             self.assertIn("foreground #F8F8F2", (out_dir / "sample.conf").read_text())
@@ -109,6 +110,10 @@ class TheMakerTests(unittest.TestCase):
             self.assertEqual(cottheme["background"]["color"], "#101418")
             self.assertEqual(cottheme["text"]["color"], "#F8F8F2")
             self.assertEqual(cottheme["metadata"]["author"], "@ylub")
+            tuxedo_text = (out_dir / "sample.tuxedo.toml").read_text()
+            self.assertIn("name = sample", tuxedo_text)
+            self.assertIn("bg = #101418", tuxedo_text)
+            self.assertIn("pri_a = #EA526F", tuxedo_text)
             yaml_text = (out_dir / "sample.yaml").read_text()
             self.assertIn('color_01: "#101418"', yaml_text)
             self.assertIn('color_16: "#FFFFFF"', yaml_text)
