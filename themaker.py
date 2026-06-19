@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 
 APP_NAME = "THEMaker"
-APP_VERSION = "0.3.1"
+APP_VERSION = "0.3.2"
 APP_AUTHOR = "@ylub"
 PROJECT_URL = "https://github.com/ylub/themaker"
 COOLORS_URL = "https://coolors.co"
@@ -33,6 +33,16 @@ EXPORT_FORMATS = (
     "yaml",
     "data",
 )
+TERMINAL_EXPORT_FORMATS = (
+    "iterm",
+    "terminal",
+    "kitty",
+    "alacritty",
+    "wezterm",
+    "yaml",
+    "data",
+)
+TUXEDO_EXPORT_FORMATS = ("tuxedo", "data")
 TERMINAL_ROLE_NAMES = (
     "black",
     "red",
@@ -49,6 +59,12 @@ DEFAULT_PREVIEW_LABELS = {
     "warning": "warning",
     "error": "error",
 }
+TUXEDO_PREVIEW_LABELS = {
+    "normal": "task title",
+    "accent": "matched text",
+    "warning": "due date",
+    "error": "priority A",
+}
 ANSI_ROLE_PREVIEW = {
     "red": "error",
     "green": "success/secondary",
@@ -57,6 +73,31 @@ ANSI_ROLE_PREVIEW = {
     "magenta": "highlight",
     "cyan": "accent",
 }
+TUXEDO_ROLE_PREVIEW = {
+    "red": "priority A, overdue dates, today",
+    "green": "priority C and +project tags",
+    "yellow": "priority B, due dates, mode badge",
+    "blue": "priority D",
+    "magenta": "other priority and @context tags",
+    "cyan": "search matches",
+}
+TUXEDO_ROLE_KEYS = {
+    "red": "pri_a, overdue, today",
+    "green": "pri_c, project",
+    "yellow": "pri_b, due, accent, mode_bg",
+    "blue": "pri_d",
+    "magenta": "pri_other, context",
+    "cyan": "matched",
+}
+TUXEDO_ROLE_SAMPLES = {
+    "red": "(A) due:2026-05-06",
+    "green": "(C) +work",
+    "yellow": "(B) due:2026-06-15",
+    "blue": "(D)",
+    "magenta": "@laptop",
+    "cyan": "matched text",
+}
+TUXEDO_EDITABLE_ROLES = ("red", "yellow", "green", "magenta", "cyan")
 ANSI_ROLE_SAMPLE_WORDS = {
     "red": "error",
     "green": "success",
@@ -192,7 +233,7 @@ def about_text():
     return "\n".join(
         [
             f"{APP_NAME} {APP_VERSION}",
-            "Terminal color themes from Coolors palettes or hex colors.",
+            "Terminal (and tuxedo!) color themes from hex codes.",
             f"Created by {APP_AUTHOR} on GitHub.",
             f"Project: {PROJECT_URL}",
             "Built with help from Codex.",
@@ -414,9 +455,40 @@ def palette_fit_options(colors, family, mode):
     return unique_color_options(options)[:4]
 
 
-def extra_color_options(colors, family, mode):
+def hue_in_range(hue, ranges):
+    if hue is None:
+        return False
+    return any(start <= hue <= end for start, end in ranges)
+
+
+def palette_has_hue_family(colors, ranges):
+    return any(hue_in_range(hue_for_color(color), ranges) for color in colors[:5])
+
+
+def tuxedo_priority_options(colors, family, mode):
+    families = [
+        (
+            "Tuxedo priority A reddish fallback",
+            "EF4444",
+            ((0.0, 0.055), (0.94, 1.0)),
+        ),
+        ("Tuxedo priority B yellowish fallback", "EAB308", ((0.10, 0.19),)),
+        ("Tuxedo priority C greenish fallback", "22C55E", ((0.24, 0.43),)),
+    ]
+    options = []
+    for name, color, ranges in families:
+        if not palette_has_hue_family(colors, ranges):
+            options.append((name, tune_suggested_color(color, family, mode)))
+    return unique_color_options(options)
+
+
+def extra_color_options(colors, family, mode, target="terminal"):
+    target_options = []
+    if target == "tuxedo":
+        target_options = tuxedo_priority_options(colors, family, mode)
     return unique_color_options(
-        complementary_options(colors, family, mode)
+        target_options
+        + complementary_options(colors, family, mode)
         + palette_fit_options(colors, family, mode)
     )
 
@@ -565,11 +637,14 @@ def foreground_options(colors, family, background):
     return unique_color_options(base_options)
 
 
-def preview_foregrounds(options, background, error_color, labels):
+def preview_foregrounds(options, background, warning_color, labels, target="terminal"):
     print("\nSuggested normal text colors:")
+    color_note = "priority A" if target == "tuxedo" else "error"
     for index, (name, color) in enumerate(options, 1):
         error_note = (
-            " close to error" if color_distance(color, error_color) < 90 else ""
+            f" close to {color_note}"
+            if color_distance(color, warning_color) < 90
+            else ""
         )
         bg_note = (
             " low background contrast" if color_distance(color, background) < 90 else ""
@@ -624,82 +699,154 @@ def palette_roles(colors, family):
     }
 
 
-def preview_theme(colors, background, foreground, roles, labels):
-    mapping = [
-        ("Background", background, ansi_text_on(background, foreground, " sample ")),
-        (
-            "Foreground",
-            foreground,
-            ansi_text_on(background, foreground, labels["normal"]),
-        ),
-        (
-            "Black / ANSI 0 / base",
-            roles["black"],
-            ansi_text_on(background, roles["black"], "base"),
-        ),
-        (
-            "Red / ANSI 1 / error",
-            roles["red"],
-            ansi_text_on(background, roles["red"], labels["error"]),
-        ),
-        (
-            "Green / ANSI 2 / success",
-            roles["green"],
-            ansi_text_on(background, roles["green"], "success"),
-        ),
-        (
-            "Yellow / ANSI 3 / warning",
-            roles["yellow"],
-            ansi_text_on(background, roles["yellow"], labels["warning"]),
-        ),
-        (
-            "Blue / ANSI 4 / link",
-            roles["blue"],
-            ansi_text_on(background, roles["blue"], "command"),
-        ),
-        (
-            "Magenta / ANSI 5 / highlight",
-            roles["magenta"],
-            ansi_text_on(background, roles["magenta"], "highlight"),
-        ),
-        (
-            "Cyan / ANSI 6 / accent",
-            roles["cyan"],
-            ansi_text_on(background, roles["cyan"], labels["accent"]),
-        ),
-        ("White / ANSI 7", foreground, ansi_text_on(background, foreground, "normal")),
-    ]
+def preview_theme(colors, background, foreground, roles, labels, target="terminal"):
+    if target == "tuxedo":
+        mapping = [
+            ("bg", background, ansi_text_on(background, foreground, " sample ")),
+            ("fg", foreground, ansi_text_on(background, foreground, labels["normal"])),
+            (
+                tuxedo_role_keys("red"),
+                roles["red"],
+                ansi_text_on(background, roles["red"], tuxedo_role_sample("red")),
+            ),
+            (
+                tuxedo_role_keys("green"),
+                roles["green"],
+                ansi_text_on(background, roles["green"], tuxedo_role_sample("green")),
+            ),
+            (
+                tuxedo_role_keys("yellow"),
+                roles["yellow"],
+                ansi_text_on(background, roles["yellow"], tuxedo_role_sample("yellow")),
+            ),
+            (
+                tuxedo_role_keys("blue"),
+                roles["blue"],
+                ansi_text_on(background, roles["blue"], tuxedo_role_sample("blue")),
+            ),
+            (
+                tuxedo_role_keys("magenta"),
+                roles["magenta"],
+                ansi_text_on(
+                    background, roles["magenta"], tuxedo_role_sample("magenta")
+                ),
+            ),
+            (
+                tuxedo_role_keys("cyan"),
+                roles["cyan"],
+                ansi_text_on(background, roles["cyan"], tuxedo_role_sample("cyan")),
+            ),
+        ]
+    else:
+        mapping = [
+            ("Background", background, ansi_text_on(background, foreground, " sample ")),
+            (
+                "Foreground",
+                foreground,
+                ansi_text_on(background, foreground, labels["normal"]),
+            ),
+            (
+                "Black / ANSI 0 / base",
+                roles["black"],
+                ansi_text_on(background, roles["black"], "base"),
+            ),
+            (
+                f"Red / {role_preview_label('red', target)}",
+                roles["red"],
+                ansi_text_on(background, roles["red"], labels["error"]),
+            ),
+            (
+                f"Green / {role_preview_label('green', target)}",
+                roles["green"],
+                ansi_text_on(background, roles["green"], "success"),
+            ),
+            (
+                f"Yellow / {role_preview_label('yellow', target)}",
+                roles["yellow"],
+                ansi_text_on(background, roles["yellow"], labels["warning"]),
+            ),
+            (
+                f"Blue / {role_preview_label('blue', target)}",
+                roles["blue"],
+                ansi_text_on(background, roles["blue"], "command"),
+            ),
+            (
+                f"Magenta / {role_preview_label('magenta', target)}",
+                roles["magenta"],
+                ansi_text_on(background, roles["magenta"], "highlight"),
+            ),
+            (
+                f"Cyan / {role_preview_label('cyan', target)}",
+                roles["cyan"],
+                ansi_text_on(background, roles["cyan"], labels["accent"]),
+            ),
+            (
+                "White / ANSI 7",
+                foreground,
+                ansi_text_on(background, foreground, "normal"),
+            ),
+        ]
 
     print("\nTheme preview:")
     for label, color, sample in mapping:
         print(f"  {label:<28} #{color} {ansi_bg(color)} {sample}")
 
     print("\nText preview:")
+    cyan_label = role_preview_label("cyan", target)
+    yellow_label = role_preview_label("yellow", target)
+    red_label = role_preview_label("red", target)
     print(
         f"  {ansi_text_on(background, foreground, labels['normal'])} (foreground) "
-        f"{ansi_text_on(background, roles['cyan'], labels['accent'])} (ANSI 6/cyan/accent) "
-        f"{ansi_text_on(background, roles['yellow'], labels['warning'])} (ANSI 3/yellow/warning) "
-        f"{ansi_text_on(background, roles['red'], labels['error'])} (ANSI 1/red/error)"
+        f"{ansi_text_on(background, roles['cyan'], labels['accent'])} ({cyan_label}) "
+        f"{ansi_text_on(background, roles['yellow'], labels['warning'])} ({yellow_label}) "
+        f"{ansi_text_on(background, roles['red'], labels['error'])} ({red_label})"
     )
 
-    print("\nANSI example:")
-    print(
-        f"  {ansi_text_on(background, roles['blue'], '$ themaker export')} "
-        f"{ansi_text_on(background, foreground, '--format all')}"
-    )
-    print(
-        f"  {ansi_text_on(background, roles['green'], 'created')} "
-        f"{ansi_text_on(background, roles['cyan'], 'theme.itermcolors')} "
-        f"{ansi_text_on(background, roles['magenta'], 'theme.lua')}"
-    )
-    print(
-        f"  {ansi_text_on(background, roles['yellow'], 'warning')} "
-        f"{ansi_text_on(background, foreground, 'normal text is close to background')}"
-    )
-    print(
-        f"  {ansi_text_on(background, roles['red'], 'error')} "
-        f"{ansi_text_on(background, foreground, 'invalid hex color')}"
-    )
+    if target == "tuxedo":
+        print("\nTuxedo example:")
+        print(
+            f"  {ansi_text_on(background, roles['red'], 'PRIORITY A')} "
+            f"{ansi_text_on(background, foreground, 'Finish Q2 board deck')} "
+            f"{ansi_text_on(background, roles['green'], '+work')} "
+            f"{ansi_text_on(background, roles['magenta'], '@laptop')} "
+            f"{ansi_text_on(background, roles['red'], 'due:2026-05-06')}"
+        )
+        print(
+            f"  {ansi_text_on(background, roles['yellow'], 'PRIORITY B')} "
+            f"{ansi_text_on(background, foreground, 'Review pull requests')} "
+            f"{ansi_text_on(background, roles['yellow'], 'due:2026-06-15')} "
+            f"{ansi_text_on(background, roles['magenta'], '@home')}"
+        )
+        print(
+            f"  {ansi_text_on(background, roles['green'], 'PRIORITY C')} "
+            f"{ansi_text_on(background, foreground, 'Pay quarterly taxes')} "
+            f"{ansi_text_on(background, roles['green'], '+finance')}"
+        )
+        print(
+            f"  Detail: priority {ansi_text_on(background, roles['red'], '(A)')} "
+            f"project {ansi_text_on(background, roles['green'], '+work')} "
+            f"context {ansi_text_on(background, roles['magenta'], '@laptop')} "
+            f"match {ansi_text_on(background, roles['cyan'], 'board')}"
+        )
+    else:
+        print("\nANSI example:")
+        print(
+            f"  {ansi_text_on(background, roles['blue'], '$ themaker export')} "
+            f"{ansi_text_on(background, foreground, '--format all')}"
+        )
+        print(
+            f"  {ansi_text_on(background, roles['green'], 'created')} "
+            f"{ansi_text_on(background, roles['cyan'], 'theme.itermcolors')} "
+            f"{ansi_text_on(background, roles['magenta'], 'theme.lua')}"
+        )
+        print(
+            f"  {ansi_text_on(background, roles['yellow'], 'warning')} "
+            f"{ansi_text_on(background, foreground, 'normal text is close to background')}"
+        )
+        print(
+            f"  {ansi_text_on(background, roles['red'], 'error')} "
+            f"{ansi_text_on(background, foreground, 'invalid hex color')}"
+        )
     if color_distance(foreground, roles["red"]) < 90:
         print("  Warning: normal text is close to the error color.")
     if color_distance(foreground, background) < 90:
@@ -1175,10 +1322,60 @@ def choose_number(prompt, count, default=1):
     return default
 
 
-def choose_foreground(colors, family, background, labels):
+def choose_theme_target():
+    print("\nTheme target:")
+    print("  1. Terminal colors")
+    print("  2. Tuxedo interface")
+    choice = choose_number("What are you designing this theme for?", 2, 1)
+    return "tuxedo" if choice == 2 else "terminal"
+
+
+def role_preview_label(role, target="terminal"):
+    if target == "tuxedo":
+        return TUXEDO_ROLE_PREVIEW[role]
+    return ANSI_ROLE_PREVIEW[role]
+
+
+def tuxedo_role_keys(role):
+    return TUXEDO_ROLE_KEYS[role]
+
+
+def tuxedo_role_key_label(role):
+    return tuxedo_role_keys(role).replace(", ", " / ")
+
+
+def tuxedo_role_sample(role):
+    return TUXEDO_ROLE_SAMPLES[role]
+
+
+def role_mapping_title(target="terminal"):
+    if target == "tuxedo":
+        return "Tuxedo colors to choose"
+    return "ANSI role mapping"
+
+
+def editable_role_names(target="terminal"):
+    if target == "tuxedo":
+        return TUXEDO_EDITABLE_ROLES
+    return ("red", "green", "yellow", "blue", "magenta", "cyan")
+
+
+def role_color_prompt(role, colors, extra_options, target="terminal"):
+    if target == "tuxedo":
+        return (
+            f"Tuxedo {tuxedo_role_key_label(role)} color: palette 1-{len(colors)}, "
+            f"suggestion c1-c{len(extra_options)}, custom hex, or Enter to keep"
+        )
+    return (
+        f"ANSI {role} color: palette 1-{len(colors)}, "
+        f"suggestion c1-c{len(extra_options)}, custom hex, or Enter to keep"
+    )
+
+
+def choose_foreground(colors, family, background, labels, target="terminal"):
     roles = palette_roles(colors, family)
     options = foreground_options(colors, family, background)
-    preview_foregrounds(options, background, roles["red"], labels)
+    preview_foregrounds(options, background, roles["red"], labels, target)
     while True:
         raw = ask("Choose normal text color number, or type custom hex", "1").strip()
         if raw.isdigit() and 1 <= int(raw) <= len(options):
@@ -1189,23 +1386,31 @@ def choose_foreground(colors, family, background, labels):
             print(error)
 
 
-def print_role_mapping(colors, roles):
-    print("\nANSI role mapping:")
-    for role in ("red", "green", "yellow", "blue", "magenta", "cyan"):
-        preview_name = ANSI_ROLE_PREVIEW[role]
+def print_role_mapping(colors, roles, target="terminal"):
+    print(f"\n{role_mapping_title(target)}:")
+    for role in editable_role_names(target):
+        preview_name = role_preview_label(role, target)
         sample_word = ANSI_ROLE_SAMPLE_WORDS[role]
-        print(
-            f"  ANSI {role:<7} / {preview_name:<17} "
-            f"#{roles[role]} {ansi_bg(roles[role])} "
-            f"{ansi_fg(roles[role], sample_word)} {color_choice_label(colors, roles[role])}"
-        )
+        if target == "tuxedo":
+            sample_word = tuxedo_role_sample(role)
+            color = roles[role]
+            source = color_choice_label(colors, color)
+            print(
+                f"  {tuxedo_role_key_label(role):<31} "
+                f"#{color} {ansi_bg(color)} {source}"
+            )
+            print(f"    {preview_name}: {ansi_fg(color, sample_word)}")
+        else:
+            print(
+                f"  ANSI {role:<7} / {preview_name:<17} "
+                f"#{roles[role]} {ansi_bg(roles[role])} "
+                f"{ansi_fg(roles[role], sample_word)} "
+                f"{color_choice_label(colors, roles[role])}"
+            )
 
 
-def choose_role_color(colors, extra_options, role, current_color):
-    prompt = (
-        f"ANSI {role} color: palette 1-{len(colors)}, suggestion c1-c{len(extra_options)}, "
-        "custom hex, or Enter to keep"
-    )
+def choose_role_color(colors, extra_options, role, current_color, target="terminal"):
+    prompt = role_color_prompt(role, colors, extra_options, target)
     raw = ask(prompt, "").strip()
     if not raw:
         return current_color
@@ -1219,25 +1424,34 @@ def choose_role_color(colors, extra_options, role, current_color):
         return clean_hex(raw)
     except ValueError as error:
         print(error)
-        return choose_role_color(colors, extra_options, role, current_color)
+        return choose_role_color(colors, extra_options, role, current_color, target)
 
 
-def choose_role_mapping(colors, family, mode, current_roles=None):
+def choose_role_mapping(colors, family, mode, current_roles=None, target="terminal"):
     roles = current_roles.copy() if current_roles else palette_roles(colors, family)
-    print_role_mapping(colors, roles)
+    if target == "tuxedo":
+        roles["blue"] = roles["green"]
+    print_role_mapping(colors, roles, target)
+    target_label = "Tuxedo roles" if target == "tuxedo" else "ANSI roles"
     customize = (
-        ask("Change which palette colors feed the ANSI roles? y/n", "n").strip().lower()
+        ask(f"Change which palette colors feed the {target_label}? y/n", "n")
+        .strip()
+        .lower()
     )
     if customize not in {"y", "yes"}:
         return roles
 
-    extra_options = extra_color_options(colors, family, mode)
+    extra_options = extra_color_options(colors, family, mode, target)
     print("\nUse palette numbers, extra suggestions, or type a custom hex.")
     preview_palette_choices(colors)
     preview_extra_color_choices(extra_options)
-    for role in ("red", "green", "yellow", "blue", "magenta", "cyan"):
-        roles[role] = choose_role_color(colors, extra_options, role, roles[role])
-    print_role_mapping(colors, roles)
+    for role in editable_role_names(target):
+        roles[role] = choose_role_color(
+            colors, extra_options, role, roles[role], target
+        )
+    if target == "tuxedo":
+        roles["blue"] = roles["green"]
+    print_role_mapping(colors, roles, target)
     return roles
 
 
@@ -1248,37 +1462,59 @@ def bright_role_suggestions(roles, family):
     }
 
 
-def offer_bright_ansi_suggestions(roles, family):
+def offer_bright_ansi_suggestions(roles, family, target="terminal"):
     suggestions = bright_role_suggestions(roles, family)
-    print("\nBright ANSI suggestions for this same theme:")
-    for role in ("red", "green", "yellow", "blue", "magenta", "cyan"):
+    if target == "tuxedo":
+        print("\nBrighter Tuxedo role suggestions for this same theme:")
+    else:
+        print("\nBright ANSI suggestions for this same theme:")
+    for role in editable_role_names(target):
         current = roles[role]
         suggested = suggestions[role]
-        sample_word = ANSI_ROLE_SAMPLE_WORDS[role]
+        if target == "tuxedo":
+            sample_word = tuxedo_role_sample(role)
+        else:
+            sample_word = ANSI_ROLE_SAMPLE_WORDS[role]
+        role_label = role_preview_label(role, target)
+        current_preview = ansi_fg(current, sample_word)
         print(
-            f"  {role:<7} #{current} {ansi_bg(current)} {ansi_fg(current, sample_word)}  ->  "
+            f"  {role_label:<27} #{current} {ansi_bg(current)} {current_preview}  ->  "
             f"#{suggested} {ansi_bg(suggested)} {ansi_fg(suggested, sample_word)}"
         )
 
-    if not confirm_yes("Apply these bright ANSI suggestions? y/n", default=False):
+    if target == "tuxedo":
+        prompt = "Apply these brighter Tuxedo role suggestions? y/n"
+    else:
+        prompt = "Apply these bright ANSI suggestions? y/n"
+    if not confirm_yes(prompt, default=False):
         return roles
 
     updated_roles = roles.copy()
-    for role, color in suggestions.items():
+    for role in editable_role_names(target):
+        color = suggestions[role]
         updated_roles[role] = color
+    if target == "tuxedo":
+        updated_roles["blue"] = updated_roles["green"]
     updated_roles["bright_black"] = bright_variant_color(roles["bright_black"], family)
-    print_role_mapping([], updated_roles)
+    print_role_mapping([], updated_roles, target)
     return updated_roles
 
 
-def preview_label_defaults() -> str:
+def preview_labels_for_target(target="terminal") -> dict:
+    if target == "tuxedo":
+        return TUXEDO_PREVIEW_LABELS.copy()
+    return DEFAULT_PREVIEW_LABELS.copy()
+
+
+def preview_label_defaults(target="terminal") -> str:
+    labels = preview_labels_for_target(target)
     return " | ".join(
-        DEFAULT_PREVIEW_LABELS[key] for key in ("normal", "accent", "warning", "error")
+        labels[key] for key in ("normal", "accent", "warning", "error")
     )
 
 
-def parse_preview_labels(raw_value: str) -> dict:
-    labels = DEFAULT_PREVIEW_LABELS.copy()
+def parse_preview_labels(raw_value: str, target="terminal") -> dict:
+    labels = preview_labels_for_target(target)
     if not raw_value.strip():
         return labels
 
@@ -1294,12 +1530,16 @@ def parse_preview_labels(raw_value: str) -> dict:
     return labels
 
 
-def choose_preview_labels() -> dict:
+def choose_preview_labels(target="terminal") -> dict:
+    if target == "tuxedo":
+        prompt = "Preview labels: task title | matched text | due date | priority A"
+    else:
+        prompt = "Preview labels: normal | accent | warning | error"
     raw_value = ask(
-        "Preview labels: normal | accent | warning | error",
-        preview_label_defaults(),
+        prompt,
+        preview_label_defaults(target),
     )
-    return parse_preview_labels(raw_value)
+    return parse_preview_labels(raw_value, target)
 
 
 def safe_filename(name):
@@ -1358,25 +1598,53 @@ def parse_export_formats(raw_value):
     return formats
 
 
-def choose_export_formats():
+def export_formats_for_target(target="terminal"):
+    if target == "tuxedo":
+        return TUXEDO_EXPORT_FORMATS
+    return TERMINAL_EXPORT_FORMATS
+
+
+def choose_export_formats(target="terminal"):
     print("\nExport options:")
-    print(
-        "  all      iTerm2, macOS Terminal, Kitty, Alacritty, WezTerm, CotEditor, Tuxedo, YAML, and data JSON"
-    )
-    print("  one      Choose one format")
-    print("  some     Choose a few formats")
-    print("  data     Save portable JSON data for someone else to export")
-    print(
-        "Formats: iterm, terminal, kitty, alacritty, wezterm, coteditor, tuxedo, yaml, data"
-    )
+    allowed_formats = export_formats_for_target(target)
+    if target == "tuxedo":
+        print("  tuxedo   Create a Tuxedo .tuxedo.toml theme")
+        print("  data     Save portable JSON data")
+        print("Formats: tuxedo, data")
+        default = "tuxedo"
+    else:
+        print(
+            "  all      iTerm2, macOS Terminal, Kitty, Alacritty, WezTerm, YAML, and data JSON"
+        )
+        print("  one      Choose one format")
+        print("  some     Choose a few formats")
+        print("  data     Save portable JSON data for someone else to export")
+        print(
+            "Formats: iterm, terminal, kitty, alacritty, wezterm, yaml, data"
+        )
+        default = "all"
+        one_default = "iterm"
+        some_default = "iterm kitty"
     while True:
-        raw = ask("Export formats", "all")
-        if raw.strip().lower() == "one":
-            raw = ask("Which one format", "iterm")
-        elif raw.strip().lower() == "some":
-            raw = ask("Which formats", "iterm kitty")
+        raw = ask("Export formats", default)
+        if target != "tuxedo" and raw.strip().lower() == "one":
+            raw = ask("Which one format", one_default)
+        elif target != "tuxedo" and raw.strip().lower() == "some":
+            raw = ask("Which formats", some_default)
         try:
-            return parse_export_formats(raw)
+            formats = parse_export_formats(raw)
+            if raw.strip().lower() == "all":
+                formats = list(allowed_formats)
+            invalid_formats = [
+                export_format
+                for export_format in formats
+                if export_format not in allowed_formats
+            ]
+            if invalid_formats:
+                allowed = ", ".join(allowed_formats)
+                print(f"Choose only these formats: {allowed}.")
+                continue
+            return formats
         except ValueError as error:
             print(error)
 
@@ -1454,6 +1722,7 @@ def load_theme_state(path):
         "foreground": plist_rgb_to_hex(theme["Foreground Color"]),
         "roles": theme_roles(theme),
         "name": path.stem,
+        "target": "terminal",
     }
 
 
@@ -1543,7 +1812,7 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
         try:
             if stage == 0:
                 palette_value = ask(
-                    "Paste Coolors URL or hex colors separated by spaces",
+                    "Paste Coolors URL or at least 5 hex codes separated by spaces",
                     "25ced1 ffffff fceade ff8a5b ea526f",
                     allow_back=False,
                 )
@@ -1551,6 +1820,7 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                 state["palette_source"] = palette_value
                 log_used_url(palette_value, state["colors"])
                 preview_palette(state["colors"])
+                state["target"] = choose_theme_target()
                 stage += 1
             elif stage == 1:
                 preview_families()
@@ -1589,7 +1859,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                     state["background"] = clean_hex(custom_bg)
                 stage += 1
             elif stage == 5:
-                state["preview_labels"] = choose_preview_labels()
+                state["preview_labels"] = choose_preview_labels(
+                    state.get("target", "terminal")
+                )
                 stage += 1
             elif stage == 6:
                 if state.get("foreground"):
@@ -1604,6 +1876,7 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                             state["family"],
                             state["background"],
                             state["preview_labels"],
+                            state.get("target", "terminal"),
                         )
                 else:
                     state["foreground"] = choose_foreground(
@@ -1611,6 +1884,7 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                         state["family"],
                         state["background"],
                         state["preview_labels"],
+                        state.get("target", "terminal"),
                     )
                 stage += 1
             elif stage == 7:
@@ -1619,9 +1893,10 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                     state["family"],
                     state["mode"],
                     state.get("roles"),
+                    state.get("target", "terminal"),
                 )
                 state["roles"] = offer_bright_ansi_suggestions(
-                    state["roles"], state["family"]
+                    state["roles"], state["family"], state.get("target", "terminal")
                 )
                 stage += 1
             elif stage == 8:
@@ -1631,6 +1906,7 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
                     state["foreground"],
                     state["roles"],
                     state["preview_labels"],
+                    state.get("target", "terminal"),
                 )
                 default_name = state.get(
                     "name",
@@ -1641,7 +1917,9 @@ def run_wizard(initial_state=None, start_stage=None, output_dir=OUTPUT_DIR):
             elif stage == 9:
                 output_dir = state.get("output_dir", OUTPUT_DIR)
                 if "formats" not in state:
-                    state["formats"] = choose_export_formats()
+                    state["formats"] = choose_export_formats(
+                        state.get("target", "terminal")
+                    )
                 format_labels = ", ".join(state["formats"])
                 print(f"\nReady to export: {state['name']}")
                 print(f"Selected formats: {format_labels}")
@@ -1687,7 +1965,7 @@ def build_parser():
         description=f"{APP_NAME}: make terminal color themes from Coolors URLs or hex palettes."
     )
     parser.add_argument(
-        "--palette", help="Coolors URL or hex colors separated by spaces."
+        "--palette", help="Coolors URL or at least 5 hex codes separated by spaces."
     )
     parser.add_argument(
         "--edit",
@@ -1736,6 +2014,7 @@ def initial_state_from_args(args):
         state["colors"] = parse_palette_input(args.palette)
         state["palette_source"] = args.palette
         preview_palette(state["colors"])
+        state["target"] = choose_theme_target()
         stage = 1
 
     if args.formats:

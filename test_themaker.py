@@ -1,3 +1,5 @@
+import contextlib
+import io
 import json
 import plistlib
 import tempfile
@@ -44,6 +46,56 @@ class TheMakerTests(unittest.TestCase):
     def test_parse_palette_input_rejects_short_palette(self):
         with self.assertRaises(ValueError):
             themaker.parse_palette_input("25ced1 ffffff")
+
+    def test_role_preview_label_defaults_to_terminal_wording(self):
+        self.assertEqual(themaker.role_preview_label("red"), "error")
+        self.assertEqual(themaker.role_preview_label("cyan"), "accent")
+
+    def test_role_preview_label_supports_tuxedo_wording(self):
+        self.assertEqual(
+            themaker.role_preview_label("red", "tuxedo"),
+            "priority A, overdue dates, today",
+        )
+        self.assertEqual(
+            themaker.role_preview_label("cyan", "tuxedo"),
+            "search matches",
+        )
+        self.assertEqual(themaker.tuxedo_role_keys("magenta"), "pri_other, context")
+        self.assertEqual(themaker.tuxedo_role_keys("cyan"), "matched")
+
+    def test_preview_label_defaults_are_target_specific(self):
+        self.assertEqual(
+            themaker.preview_label_defaults("terminal"),
+            "normal text | accent | warning | error",
+        )
+        self.assertEqual(
+            themaker.preview_label_defaults("tuxedo"),
+            "task title | matched text | due date | priority A",
+        )
+
+    def test_parse_preview_labels_uses_tuxedo_defaults(self):
+        self.assertEqual(
+            themaker.parse_preview_labels("", "tuxedo"),
+            {
+                "normal": "task title",
+                "accent": "matched text",
+                "warning": "due date",
+                "error": "priority A",
+            },
+        )
+
+    def test_tuxedo_foreground_warning_says_priority_a(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            themaker.preview_foregrounds(
+                [("Soft white", "F8F8F2")],
+                "101418",
+                "F3F3F4",
+                themaker.preview_labels_for_target("tuxedo"),
+                "tuxedo",
+            )
+        self.assertIn("close to priority A", output.getvalue())
+        self.assertNotIn("close to error", output.getvalue())
 
     def test_theme_model_has_terminal_colors(self):
         model = self.build_model()
@@ -165,6 +217,75 @@ class TheMakerTests(unittest.TestCase):
         )
         for _name, color in options:
             self.assertEqual(themaker.clean_hex(color), color)
+
+    def test_tuxedo_extra_color_options_add_missing_priority_colors(self):
+        colors = themaker.parse_palette_input("3b82f6 6366f1 8b5cf6 64748b e2e8f0")
+        family = themaker.THEME_FAMILIES[0]
+        options = themaker.extra_color_options(colors, family, "balanced", "tuxedo")
+        names = [name for name, _color in options]
+        self.assertIn("Tuxedo priority A reddish fallback", names)
+        self.assertIn("Tuxedo priority B yellowish fallback", names)
+        self.assertIn("Tuxedo priority C greenish fallback", names)
+        for _name, color in options:
+            self.assertEqual(themaker.clean_hex(color), color)
+
+    def test_tuxedo_extra_color_options_skip_priority_colors_already_present(self):
+        colors = themaker.parse_palette_input("ef4444 eab308 22c55e 64748b e2e8f0")
+        family = themaker.THEME_FAMILIES[0]
+        options = themaker.extra_color_options(colors, family, "balanced", "tuxedo")
+        names = [name for name, _color in options]
+        self.assertNotIn("Tuxedo priority A reddish fallback", names)
+        self.assertNotIn("Tuxedo priority B yellowish fallback", names)
+        self.assertNotIn("Tuxedo priority C greenish fallback", names)
+
+    def test_tuxedo_edits_only_semantic_roles(self):
+        self.assertEqual(
+            themaker.editable_role_names("tuxedo"),
+            ("red", "yellow", "green", "magenta", "cyan"),
+        )
+
+    def test_terminal_edits_all_ansi_roles(self):
+        self.assertEqual(
+            themaker.editable_role_names("terminal"),
+            ("red", "green", "yellow", "blue", "magenta", "cyan"),
+        )
+
+    def test_tuxedo_bright_suggestions_only_apply_semantic_roles(self):
+        roles = {
+            "black": "101418",
+            "red": "EF4444",
+            "green": "22C55E",
+            "yellow": "EAB308",
+            "blue": "3B82F6",
+            "magenta": "F97316",
+            "cyan": "38BDF8",
+            "bright_black": "64748B",
+        }
+        family = themaker.THEME_FAMILIES[0]
+        suggestions = themaker.bright_role_suggestions(roles, family)
+        updated = roles.copy()
+        for role in themaker.editable_role_names("tuxedo"):
+            updated[role] = suggestions[role]
+        updated["blue"] = updated["green"]
+        self.assertEqual(updated["blue"], updated["green"])
+
+    def test_interactive_export_formats_are_target_specific(self):
+        self.assertEqual(
+            themaker.export_formats_for_target("terminal"),
+            (
+                "iterm",
+                "terminal",
+                "kitty",
+                "alacritty",
+                "wezterm",
+                "yaml",
+                "data",
+            ),
+        )
+        self.assertEqual(
+            themaker.export_formats_for_target("tuxedo"),
+            ("tuxedo", "data"),
+        )
 
 
 if __name__ == "__main__":
