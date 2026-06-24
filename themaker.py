@@ -43,6 +43,7 @@ TERMINAL_EXPORT_FORMATS = (
     "data",
 )
 TUXEDO_EXPORT_FORMATS = ("tuxedo", "data")
+COTEDITOR_EXPORT_FORMATS = ("coteditor", "data")
 TERMINAL_ROLE_NAMES = (
     "black",
     "red",
@@ -64,6 +65,12 @@ TUXEDO_PREVIEW_LABELS = {
     "accent": "matched text",
     "warning": "due date",
     "error": "priority A",
+}
+COTEDITOR_PREVIEW_LABELS = {
+    "normal": "variable",
+    "accent": "command",
+    "warning": "type",
+    "error": "keyword",
 }
 ANSI_ROLE_PREVIEW = {
     "red": "error",
@@ -98,6 +105,28 @@ TUXEDO_ROLE_SAMPLES = {
     "cyan": "matched text",
 }
 TUXEDO_EDITABLE_ROLES = ("red", "yellow", "green", "magenta", "cyan")
+COTEDITOR_ROLE_PREVIEW = {
+    "cyan": "commands and attributes",
+    "yellow": "types, characters, and highlight",
+    "blue": "keywords",
+    "magenta": "values and numbers",
+    "green": "strings",
+}
+COTEDITOR_ROLE_KEYS = {
+    "cyan": "commands, attributes",
+    "yellow": "types, characters, highlight",
+    "blue": "keywords",
+    "magenta": "values, numbers",
+    "green": "strings",
+}
+COTEDITOR_ROLE_SAMPLES = {
+    "cyan": "command @attribute",
+    "yellow": "Type 'c'",
+    "blue": "keyword",
+    "magenta": "true 42",
+    "green": "\"string\"",
+}
+COTEDITOR_EDITABLE_ROLES = ("cyan", "yellow", "blue", "magenta", "green")
 ANSI_ROLE_SAMPLE_WORDS = {
     "red": "error",
     "green": "success",
@@ -233,7 +262,7 @@ def about_text():
     return "\n".join(
         [
             f"{APP_NAME} {APP_VERSION}",
-            "Terminal (and tuxedo!) color themes from hex codes.",
+            "Terminal, Tuxedo, and CotEditor color themes from hex codes.",
             f"Created by {APP_AUTHOR} on GitHub.",
             f"Project: {PROJECT_URL}",
             "Built with help from Codex.",
@@ -639,7 +668,12 @@ def foreground_options(colors, family, background):
 
 def preview_foregrounds(options, background, warning_color, labels, target="terminal"):
     print("\nSuggested normal text colors:")
-    color_note = "priority A" if target == "tuxedo" else "error"
+    if target == "tuxedo":
+        color_note = "priority A"
+    elif target == "coteditor":
+        color_note = "syntax accent"
+    else:
+        color_note = "error"
     for index, (name, color) in enumerate(options, 1):
         error_note = (
             f" close to {color_note}"
@@ -737,6 +771,62 @@ def preview_theme(colors, background, foreground, roles, labels, target="termina
                 ansi_text_on(background, roles["cyan"], tuxedo_role_sample("cyan")),
             ),
         ]
+    elif target == "coteditor":
+        muted = blend_colors(background, foreground, 0.55)
+        mapping = [
+            ("background", background, ansi_text_on(background, foreground, " sample ")),
+            ("text", foreground, ansi_text_on(background, foreground, labels["normal"])),
+            (
+                "keywords",
+                roles["blue"],
+                ansi_text_on(background, roles["blue"], coteditor_role_sample("blue")),
+            ),
+            (
+                "commands",
+                roles["cyan"],
+                ansi_text_on(background, roles["cyan"], coteditor_role_sample("cyan")),
+            ),
+            (
+                "types",
+                roles["yellow"],
+                ansi_text_on(
+                    background, roles["yellow"], coteditor_role_sample("yellow")
+                ),
+            ),
+            (
+                "attributes",
+                roles["cyan"],
+                ansi_text_on(background, roles["cyan"], "@attribute"),
+            ),
+            (
+                "variables",
+                foreground,
+                ansi_text_on(background, foreground, labels["normal"]),
+            ),
+            (
+                "values",
+                roles["magenta"],
+                ansi_text_on(
+                    background, roles["magenta"], coteditor_role_sample("magenta")
+                ),
+            ),
+            (
+                "numbers",
+                roles["magenta"],
+                ansi_text_on(background, roles["magenta"], "42"),
+            ),
+            (
+                "strings",
+                roles["green"],
+                ansi_text_on(background, roles["green"], coteditor_role_sample("green")),
+            ),
+            (
+                "characters",
+                roles["yellow"],
+                ansi_text_on(background, roles["yellow"], "'c'"),
+            ),
+            ("comments", muted, ansi_text_on(background, muted, "comment")),
+        ]
     else:
         mapping = [
             ("Background", background, ansi_text_on(background, foreground, " sample ")),
@@ -792,15 +882,26 @@ def preview_theme(colors, background, foreground, roles, labels, target="termina
         print(f"  {label:<28} #{color} {ansi_bg(color)} {sample}")
 
     print("\nText preview:")
-    cyan_label = role_preview_label("cyan", target)
-    yellow_label = role_preview_label("yellow", target)
-    red_label = role_preview_label("red", target)
-    print(
-        f"  {ansi_text_on(background, foreground, labels['normal'])} (foreground) "
-        f"{ansi_text_on(background, roles['cyan'], labels['accent'])} ({cyan_label}) "
-        f"{ansi_text_on(background, roles['yellow'], labels['warning'])} ({yellow_label}) "
-        f"{ansi_text_on(background, roles['red'], labels['error'])} ({red_label})"
-    )
+    if target == "coteditor":
+        cyan_label = role_preview_label("cyan", target)
+        yellow_label = role_preview_label("yellow", target)
+        blue_label = role_preview_label("blue", target)
+        print(
+            f"  {ansi_text_on(background, foreground, labels['normal'])} (text) "
+            f"{ansi_text_on(background, roles['cyan'], labels['accent'])} ({cyan_label}) "
+            f"{ansi_text_on(background, roles['yellow'], labels['warning'])} ({yellow_label}) "
+            f"{ansi_text_on(background, roles['blue'], labels['error'])} ({blue_label})"
+        )
+    else:
+        cyan_label = role_preview_label("cyan", target)
+        yellow_label = role_preview_label("yellow", target)
+        red_label = role_preview_label("red", target)
+        print(
+            f"  {ansi_text_on(background, foreground, labels['normal'])} (foreground) "
+            f"{ansi_text_on(background, roles['cyan'], labels['accent'])} ({cyan_label}) "
+            f"{ansi_text_on(background, roles['yellow'], labels['warning'])} ({yellow_label}) "
+            f"{ansi_text_on(background, roles['red'], labels['error'])} ({red_label})"
+        )
 
     if target == "tuxedo":
         print("\nTuxedo example:")
@@ -827,6 +928,19 @@ def preview_theme(colors, background, foreground, roles, labels, target="termina
             f"project {ansi_text_on(background, roles['green'], '+work')} "
             f"context {ansi_text_on(background, roles['magenta'], '@laptop')} "
             f"match {ansi_text_on(background, roles['cyan'], 'board')}"
+        )
+    elif target == "coteditor":
+        print("\nCotEditor example:")
+        print(
+            f"  {ansi_text_on(background, roles['blue'], 'keyword')} "
+            f"{ansi_text_on(background, roles['cyan'], 'command')} "
+            f"{ansi_text_on(background, foreground, 'variable')} "
+            f"{ansi_text_on(background, roles['magenta'], '42')}"
+        )
+        print(
+            f"  {ansi_text_on(background, roles['green'], '\"string\"')} "
+            f"{ansi_text_on(background, roles['yellow'], 'Type')} "
+            f"{ansi_text_on(background, foreground, labels['normal'])}"
         )
     else:
         print("\nANSI example:")
@@ -1326,13 +1440,20 @@ def choose_theme_target():
     print("\nTheme target:")
     print("  1. Terminal colors")
     print("  2. Tuxedo interface")
-    choice = choose_number("What are you designing this theme for?", 2, 1)
-    return "tuxedo" if choice == 2 else "terminal"
+    print("  3. CotEditor syntax theme")
+    choice = choose_number("What are you designing this theme for?", 3, 1)
+    if choice == 2:
+        return "tuxedo"
+    if choice == 3:
+        return "coteditor"
+    return "terminal"
 
 
 def role_preview_label(role, target="terminal"):
     if target == "tuxedo":
         return TUXEDO_ROLE_PREVIEW[role]
+    if target == "coteditor":
+        return COTEDITOR_ROLE_PREVIEW[role]
     return ANSI_ROLE_PREVIEW[role]
 
 
@@ -1348,15 +1469,31 @@ def tuxedo_role_sample(role):
     return TUXEDO_ROLE_SAMPLES[role]
 
 
+def coteditor_role_keys(role):
+    return COTEDITOR_ROLE_KEYS[role]
+
+
+def coteditor_role_key_label(role):
+    return coteditor_role_keys(role).replace(", ", " / ")
+
+
+def coteditor_role_sample(role):
+    return COTEDITOR_ROLE_SAMPLES[role]
+
+
 def role_mapping_title(target="terminal"):
     if target == "tuxedo":
         return "Tuxedo colors to choose"
+    if target == "coteditor":
+        return "CotEditor syntax colors to choose"
     return "ANSI role mapping"
 
 
 def editable_role_names(target="terminal"):
     if target == "tuxedo":
         return TUXEDO_EDITABLE_ROLES
+    if target == "coteditor":
+        return COTEDITOR_EDITABLE_ROLES
     return ("red", "green", "yellow", "blue", "magenta", "cyan")
 
 
@@ -1365,6 +1502,12 @@ def role_color_prompt(role, colors, extra_options, target="terminal"):
         return (
             f"Tuxedo {tuxedo_role_key_label(role)} color: palette 1-{len(colors)}, "
             f"suggestion c1-c{len(extra_options)}, custom hex, or Enter to keep"
+        )
+    if target == "coteditor":
+        return (
+            f"CotEditor {coteditor_role_key_label(role)} color: "
+            f"palette 1-{len(colors)}, suggestion c1-c{len(extra_options)}, "
+            "custom hex, or Enter to keep"
         )
     return (
         f"ANSI {role} color: palette 1-{len(colors)}, "
@@ -1375,7 +1518,8 @@ def role_color_prompt(role, colors, extra_options, target="terminal"):
 def choose_foreground(colors, family, background, labels, target="terminal"):
     roles = palette_roles(colors, family)
     options = foreground_options(colors, family, background)
-    preview_foregrounds(options, background, roles["red"], labels, target)
+    warning_role = "cyan" if target == "coteditor" else "red"
+    preview_foregrounds(options, background, roles[warning_role], labels, target)
     while True:
         raw = ask("Choose normal text color number, or type custom hex", "1").strip()
         if raw.isdigit() and 1 <= int(raw) <= len(options):
@@ -1397,6 +1541,15 @@ def print_role_mapping(colors, roles, target="terminal"):
             source = color_choice_label(colors, color)
             print(
                 f"  {tuxedo_role_key_label(role):<31} "
+                f"#{color} {ansi_bg(color)} {source}"
+            )
+            print(f"    {preview_name}: {ansi_fg(color, sample_word)}")
+        elif target == "coteditor":
+            sample_word = coteditor_role_sample(role)
+            color = roles[role]
+            source = color_choice_label(colors, color)
+            print(
+                f"  {coteditor_role_key_label(role):<31} "
                 f"#{color} {ansi_bg(color)} {source}"
             )
             print(f"    {preview_name}: {ansi_fg(color, sample_word)}")
@@ -1432,7 +1585,12 @@ def choose_role_mapping(colors, family, mode, current_roles=None, target="termin
     if target == "tuxedo":
         roles["blue"] = roles["green"]
     print_role_mapping(colors, roles, target)
-    target_label = "Tuxedo roles" if target == "tuxedo" else "ANSI roles"
+    if target == "tuxedo":
+        target_label = "Tuxedo roles"
+    elif target == "coteditor":
+        target_label = "CotEditor syntax colors"
+    else:
+        target_label = "ANSI roles"
     customize = (
         ask(f"Change which palette colors feed the {target_label}? y/n", "n")
         .strip()
@@ -1466,6 +1624,8 @@ def offer_bright_ansi_suggestions(roles, family, target="terminal"):
     suggestions = bright_role_suggestions(roles, family)
     if target == "tuxedo":
         print("\nBrighter Tuxedo role suggestions for this same theme:")
+    elif target == "coteditor":
+        print("\nBrighter CotEditor syntax suggestions for this same theme:")
     else:
         print("\nBright ANSI suggestions for this same theme:")
     for role in editable_role_names(target):
@@ -1473,6 +1633,8 @@ def offer_bright_ansi_suggestions(roles, family, target="terminal"):
         suggested = suggestions[role]
         if target == "tuxedo":
             sample_word = tuxedo_role_sample(role)
+        elif target == "coteditor":
+            sample_word = coteditor_role_sample(role)
         else:
             sample_word = ANSI_ROLE_SAMPLE_WORDS[role]
         role_label = role_preview_label(role, target)
@@ -1484,6 +1646,8 @@ def offer_bright_ansi_suggestions(roles, family, target="terminal"):
 
     if target == "tuxedo":
         prompt = "Apply these brighter Tuxedo role suggestions? y/n"
+    elif target == "coteditor":
+        prompt = "Apply these brighter CotEditor syntax suggestions? y/n"
     else:
         prompt = "Apply these bright ANSI suggestions? y/n"
     if not confirm_yes(prompt, default=False):
@@ -1503,6 +1667,8 @@ def offer_bright_ansi_suggestions(roles, family, target="terminal"):
 def preview_labels_for_target(target="terminal") -> dict:
     if target == "tuxedo":
         return TUXEDO_PREVIEW_LABELS.copy()
+    if target == "coteditor":
+        return COTEDITOR_PREVIEW_LABELS.copy()
     return DEFAULT_PREVIEW_LABELS.copy()
 
 
@@ -1533,6 +1699,8 @@ def parse_preview_labels(raw_value: str, target="terminal") -> dict:
 def choose_preview_labels(target="terminal") -> dict:
     if target == "tuxedo":
         prompt = "Preview labels: task title | matched text | due date | priority A"
+    elif target == "coteditor":
+        prompt = "Preview labels: variable | command | type | keyword"
     else:
         prompt = "Preview labels: normal | accent | warning | error"
     raw_value = ask(
@@ -1601,6 +1769,8 @@ def parse_export_formats(raw_value):
 def export_formats_for_target(target="terminal"):
     if target == "tuxedo":
         return TUXEDO_EXPORT_FORMATS
+    if target == "coteditor":
+        return COTEDITOR_EXPORT_FORMATS
     return TERMINAL_EXPORT_FORMATS
 
 
@@ -1612,6 +1782,11 @@ def choose_export_formats(target="terminal"):
         print("  data     Save portable JSON data")
         print("Formats: tuxedo, data")
         default = "tuxedo"
+    elif target == "coteditor":
+        print("  coteditor   Create a CotEditor .cottheme syntax theme")
+        print("  data        Save portable JSON data")
+        print("Formats: coteditor, data")
+        default = "coteditor"
     else:
         print(
             "  all      iTerm2, macOS Terminal, Kitty, Alacritty, WezTerm, YAML, and data JSON"
@@ -1627,9 +1802,9 @@ def choose_export_formats(target="terminal"):
         some_default = "iterm kitty"
     while True:
         raw = ask("Export formats", default)
-        if target != "tuxedo" and raw.strip().lower() == "one":
+        if target == "terminal" and raw.strip().lower() == "one":
             raw = ask("Which one format", one_default)
-        elif target != "tuxedo" and raw.strip().lower() == "some":
+        elif target == "terminal" and raw.strip().lower() == "some":
             raw = ask("Which formats", some_default)
         try:
             formats = parse_export_formats(raw)

@@ -63,6 +63,20 @@ class TheMakerTests(unittest.TestCase):
         self.assertEqual(themaker.tuxedo_role_keys("magenta"), "pri_other, context")
         self.assertEqual(themaker.tuxedo_role_keys("cyan"), "matched")
 
+    def test_role_preview_label_supports_coteditor_wording(self):
+        self.assertEqual(
+            themaker.role_preview_label("cyan", "coteditor"),
+            "commands and attributes",
+        )
+        self.assertEqual(
+            themaker.role_preview_label("yellow", "coteditor"),
+            "types, characters, and highlight",
+        )
+        self.assertEqual(
+            themaker.coteditor_role_keys("magenta"),
+            "values, numbers",
+        )
+
     def test_preview_label_defaults_are_target_specific(self):
         self.assertEqual(
             themaker.preview_label_defaults("terminal"),
@@ -71,6 +85,10 @@ class TheMakerTests(unittest.TestCase):
         self.assertEqual(
             themaker.preview_label_defaults("tuxedo"),
             "task title | matched text | due date | priority A",
+        )
+        self.assertEqual(
+            themaker.preview_label_defaults("coteditor"),
+            "variable | command | type | keyword",
         )
 
     def test_parse_preview_labels_uses_tuxedo_defaults(self):
@@ -95,6 +113,19 @@ class TheMakerTests(unittest.TestCase):
                 "tuxedo",
             )
         self.assertIn("close to priority A", output.getvalue())
+        self.assertNotIn("close to error", output.getvalue())
+
+    def test_coteditor_foreground_warning_says_syntax_accent(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            themaker.preview_foregrounds(
+                [("Soft white", "F8F8F2")],
+                "101418",
+                "F3F3F4",
+                themaker.preview_labels_for_target("coteditor"),
+                "coteditor",
+            )
+        self.assertIn("close to syntax accent", output.getvalue())
         self.assertNotIn("close to error", output.getvalue())
 
     def test_theme_model_has_terminal_colors(self):
@@ -250,6 +281,12 @@ class TheMakerTests(unittest.TestCase):
             ("red", "green", "yellow", "blue", "magenta", "cyan"),
         )
 
+    def test_coteditor_edits_only_syntax_roles(self):
+        self.assertEqual(
+            themaker.editable_role_names("coteditor"),
+            ("cyan", "yellow", "blue", "magenta", "green"),
+        )
+
     def test_tuxedo_bright_suggestions_only_apply_semantic_roles(self):
         roles = {
             "black": "101418",
@@ -285,6 +322,10 @@ class TheMakerTests(unittest.TestCase):
         self.assertEqual(
             themaker.export_formats_for_target("tuxedo"),
             ("tuxedo", "data"),
+        )
+        self.assertEqual(
+            themaker.export_formats_for_target("coteditor"),
+            ("coteditor", "data"),
         )
 
 
